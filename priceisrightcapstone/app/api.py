@@ -193,18 +193,23 @@ async def test_api_connection(service: str, request: Request):
         return {"ok": False, "message": f"Unknown service: {service}"}
 
 
-@app.get("/results", response_model=List[DealResult])
+@app.get("/results")
 def get_results():
-    # Return last run results from memory file
-    import json
-    import os
+    """Return last 10 deal results from memory file.
+    The memory file stores DealResult objects with nested 'deal' and 'ensemble_result' keys.
+    Returns raw JSON to avoid Pydantic validation errors on legacy data."""
+    import json as _json
     if os.path.exists(settings.MEMORY_FILE):
         try:
             with open(settings.MEMORY_FILE, 'r') as f:
-                data = json.load(f)
-                return data[-10:] # Return last 10
-        except:
-            return []
+                data = _json.load(f)
+            # Handle both list format (new) and dict format {results: [...]} (legacy)
+            if isinstance(data, dict):
+                data = data.get('results', [])
+            if isinstance(data, list) and len(data) > 0:
+                return data[-10:]  # Return last 10
+        except Exception:
+            pass
     return []
 
 

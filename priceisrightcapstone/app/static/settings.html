@@ -330,25 +330,37 @@ async function testApi(service) {
   statusEl.textContent = '⏳ Testing...';
   statusEl.style.color = '#ffa000';
 
-  const keyMap = {
-    openai: 'OPENAI_API_KEY', anthropic: 'ANTHROPIC_API_KEY',
-    pushover: 'PUSHOVER_USER', modal: 'MODAL_TOKEN_ID'
-  };
-  const keyEl = document.getElementById(keyMap[service]);
-  const key = keyEl ? keyEl.value.trim() : '';
-
-  if (!key || key.length < 4) {
-    statusEl.textContent = '⚠️ No key entered';
-    statusEl.style.color = '#ffa000';
-    return;
+  // Build the payload using the exact field names the backend expects
+  const getVal = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  let payload = {};
+  if (service === 'openai') {
+    payload = { OPENAI_API_KEY: getVal('OPENAI_API_KEY') };
+    if (!payload.OPENAI_API_KEY || payload.OPENAI_API_KEY.length < 4) {
+      statusEl.textContent = '⚠️ OpenAI API key is empty'; statusEl.style.color = '#ffa000'; return;
+    }
+  } else if (service === 'anthropic') {
+    payload = { ANTHROPIC_API_KEY: getVal('ANTHROPIC_API_KEY') };
+    if (!payload.ANTHROPIC_API_KEY || payload.ANTHROPIC_API_KEY.length < 4) {
+      statusEl.textContent = '⚠️ Anthropic API key is empty'; statusEl.style.color = '#ffa000'; return;
+    }
+  } else if (service === 'pushover') {
+    payload = { PUSHOVER_USER: getVal('PUSHOVER_USER'), PUSHOVER_TOKEN: getVal('PUSHOVER_TOKEN') };
+    if (!payload.PUSHOVER_USER || !payload.PUSHOVER_TOKEN) {
+      statusEl.textContent = '⚠️ Pushover User Key or App Token is empty'; statusEl.style.color = '#ffa000'; return;
+    }
+  } else if (service === 'modal') {
+    payload = { MODAL_TOKEN_ID: getVal('MODAL_TOKEN_ID'), MODAL_TOKEN_SECRET: getVal('MODAL_TOKEN_SECRET') };
+    if (!payload.MODAL_TOKEN_ID || !payload.MODAL_TOKEN_SECRET) {
+      statusEl.textContent = '⚠️ Modal Token ID or Secret is empty'; statusEl.style.color = '#ffa000'; return;
+    }
   }
 
   try {
     const r = await fetch(API + '/test-api/' + service, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key})
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
     });
     const j = await r.json();
-    if (j.success) {
+    if (j.ok) {
       statusEl.textContent = '✅ ' + (j.message || 'Connected');
       statusEl.style.color = '#4caf50';
     } else {

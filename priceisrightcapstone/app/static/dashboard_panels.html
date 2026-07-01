@@ -213,16 +213,30 @@ async function fetchDeals() {
       container.innerHTML = '<p class="empty-msg">No deals found yet. Click "Scan for Deals Now" to start.</p>';
       return;
     }
-    const cards = deals.map(d => {
-      const disc = d.discount_pct ? Math.round(d.discount_pct) : 0;
-      return `<div class="deal-card">
-        <div class="deal-title">${d.product_name || d.title || 'Unknown Product'}</div>
+    const cards = deals.map(raw => {
+      // DealResult has nested structure:
+      // { deal: {title, price, url, ...}, ensemble_result: {estimated_price, discount_pct, is_great_deal, ...} }
+      // Also support flat format for backwards compatibility
+      const d = (raw.deal && typeof raw.deal === 'object') ? raw.deal : raw;
+      const e = (raw.ensemble_result && typeof raw.ensemble_result === 'object') ? raw.ensemble_result : {};
+      const title = d.title || d.product_name || raw.title || 'Unknown Product';
+      const currentPrice = Number(d.price || d.current_price || raw.current_price || 0);
+      const predictedPrice = Number(e.estimated_price || raw.predicted_price || raw.estimated_price || 0);
+      const discountPct = Number(e.discount_pct || raw.discount_pct || 0);
+      const url = d.url || raw.url || '';
+      const disc = Math.round(discountPct);
+      const isGreatDeal = e.is_great_deal || raw.is_great_deal || false;
+      return `<div class="deal-card" style="${isGreatDeal ? 'border-color:#e53935;' : ''}">
+        <div class="deal-title">${title}</div>
         <div class="deal-prices">
-          <span class="deal-current">Current: $${(d.current_price||0).toFixed(2)}</span>
-          <span class="deal-predicted">Predicted: $${(d.predicted_price||0).toFixed(2)}</span>
+          <span class="deal-current">Current: $${currentPrice.toFixed(2)}</span>
+          <span class="deal-predicted">Predicted: $${predictedPrice.toFixed(2)}</span>
         </div>
-        ${disc > 0 ? `<span class="deal-discount">-${disc}% OFF</span>` : ''}
-        ${d.url ? `<div style="margin-top:6px"><a href="${d.url}" target="_blank" style="color:#ffa000; font-size:10px">View Deal →</a></div>` : ''}
+        <div style="margin-top:4px">
+          ${disc > 0 ? `<span class="deal-discount">-${disc}% OFF</span>` : ''}
+          ${isGreatDeal ? '<span style="margin-left:6px;font-size:10px;color:#ffa000">🔥 Great Deal</span>' : ''}
+        </div>
+        ${url ? `<div style="margin-top:6px"><a href="${url}" target="_blank" style="color:#ffa000; font-size:10px">View Deal →</a></div>` : ''}
       </div>`;
     }).join('');
     container.innerHTML = `<div class="deal-grid">${cards}</div>`;
