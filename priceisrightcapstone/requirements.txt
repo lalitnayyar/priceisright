@@ -1,12 +1,32 @@
+# ── Web framework ─────────────────────────────────────────────────────────────
 fastapi==0.104.1
-uvicorn==0.24.0
+uvicorn[standard]==0.24.0
 pydantic==2.5.2
 pydantic-settings==2.1.0
+
+# ── UI ────────────────────────────────────────────────────────────────────────
 gradio==4.12.0
+
+# ── AI / LLM clients ──────────────────────────────────────────────────────────
 openai==1.3.7
+anthropic==0.8.1
+
+# ── PyTorch (CPU-only slim build — avoids CUDA bloat in Docker) ───────────────
+torch==2.0.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+
+# ── Transformers stack — pinned for torch 2.0.x compatibility ─────────────────
+transformers==4.35.2
+tokenizers==0.15.0
+huggingface-hub==0.19.4
+sentence-transformers==2.3.1
+
+# ── Vector store ──────────────────────────────────────────────────────────────
 chromadb==0.4.18
-sentence-transformers==2.2.2
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
 feedparser==6.0.10
 requests==2.31.0
-torch==2.1.1
+numpy==1.26.2
+
+# ── Testing ───────────────────────────────────────────────────────────────────
 pytest==7.4.3

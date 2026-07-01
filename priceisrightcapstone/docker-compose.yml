@@ -1,6 +1,11 @@
-version: '3.8'
+# =============================================================================
+# The Price Is Right — Docker Compose
+# Note: 'version' field intentionally omitted (obsolete in Compose V2)
+# Author: Lalit Nayyar | lalitnayyar@gmail.com
+# =============================================================================
 
 services:
+
   chromadb:
     image: chromadb/chroma:latest
     ports:
@@ -9,6 +14,12 @@ services:
       - ./data/chroma:/chroma/chroma
     environment:
       - IS_PERSISTENT=TRUE
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   rag-init:
     build: .
@@ -18,7 +29,9 @@ services:
     volumes:
       - ./data:/app/data
     depends_on:
-      - chromadb
+      chromadb:
+        condition: service_healthy
+    restart: "no"
 
   api:
     build: .
@@ -30,7 +43,9 @@ services:
     volumes:
       - ./data:/app/data
     depends_on:
-      - rag-init
+      chromadb:
+        condition: service_healthy
+    restart: unless-stopped
 
   app:
     build: .
@@ -43,3 +58,4 @@ services:
       - ./data:/app/data
     depends_on:
       - api
+    restart: unless-stopped

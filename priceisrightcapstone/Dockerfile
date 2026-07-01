@@ -1,30 +1,50 @@
+# =============================================================================
+# The Price Is Right — Dockerfile
+# Base : python:3.11-slim
+# Author: Lalit Nayyar | lalitnayyar@gmail.com
+# =============================================================================
+
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+# ── System dependencies ───────────────────────────────────────────────────────
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# ── Python dependencies ───────────────────────────────────────────────────────
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Pre-download embedding models (saves time on startup)
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+# ── Pre-cache the embedding model weights (runs once at build time) ───────────
+# Uses a try/except so a network hiccup during build does not fail the image.
+# The model will be downloaded at first runtime if not cached here.
+RUN python - <<'EOF'
+try:
+    from sentence_transformers import SentenceTransformer
+    SentenceTransformer('all-MiniLM-L6-v2')
+    print("Embedding model cached successfully.")
+except Exception as e:
+    print(f"WARNING: Could not pre-cache embedding model: {e}")
+    print("Model will be downloaded at first runtime.")
+EOF
 
-# Copy application code
+# ── Application code ──────────────────────────────────────────────────────────
 COPY . .
 
-# Create data directory
-RUN mkdir -p /app/data
+# ── Runtime setup ─────────────────────────────────────────────────────────────
+RUN mkdir -p /app/data /app/tests/reports
 
-# Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1
 
-# Expose ports
+# ── Ports ─────────────────────────────────────────────────────────────────────
 EXPOSE 7860 8000
 
-# Default command (overridden by docker-compose)
+# ── Default command (overridden by docker-compose) ────────────────────────────
 CMD ["python", "main.py", "--mode", "api"]
