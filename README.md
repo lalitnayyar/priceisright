@@ -4,7 +4,7 @@
 
 > **Author:** Lalit Nayyar | lalitnayyar@gmail.com | +971508320336 | +919595353336
 > **Repository:** https://github.com/lalitnayyar/priceisright.git
-> **Current Version:** v1.5.0
+> **Current Version:** v2.0.0
 
 ---
 
@@ -50,8 +50,10 @@ The application is fully containerized and consists of four main Docker services
 |---------|-------|------|------|
 | `chromadb` | `chromadb/chroma:0.4.24` | 8000 | Persistent vector database storing product embeddings |
 | `rag-init` | Custom Python build | — | One-off initialization script that populates ChromaDB with sample data |
-| `api` | Custom Python build | 8001 | FastAPI REST API layer handling background tasks and state management |
-| `app` | Custom Python build | 7860 | Gradio-based web UI providing the dashboard and settings interface |
+| `api` | Custom Python build | 8001 | FastAPI REST API layer (standalone, available for external integrations) |
+| `app` | Custom Python build | **7860** | **Unified service** — Gradio UI + FastAPI REST API both served on port 7860 via `gr.mount_gradio_app` |
+
+> **Architecture Note (v2.0):** The `app` service now mounts Gradio directly onto FastAPI using `gr.mount_gradio_app`. This means the dashboard UI and all REST endpoints (`/settings`, `/status`, `/scan`, `/results`) are served from the **same origin on port 7860**. This eliminates all CORS issues and allows the browser to call API endpoints using simple relative paths (e.g., `fetch('/settings')` instead of `fetch('http://localhost:8001/settings')`). The dashboard is now fully dynamic — all three panels (Agent Status, Deal Opportunities, Live Logs) are driven by live JavaScript polling of the backend API.
 
 ---
 
@@ -114,11 +116,12 @@ chmod +x manage.sh
 
 Once deployed, access the application at:
 
-| Interface | URL |
-|-----------|-----|
-| **Gradio Dashboard** | http://localhost:7860 |
-| **FastAPI REST API** | http://localhost:8001 |
-| **ChromaDB API** | http://localhost:8000 |
+| Interface | URL | Notes |
+|-----------|-----|-------|
+| **Gradio Dashboard** | http://localhost:7860 | Main UI — Dashboard + Settings tabs |
+| **FastAPI REST API** | http://localhost:7860/docs | Swagger UI — all endpoints on same port as UI |
+| **FastAPI (standalone)** | http://localhost:8001 | Legacy standalone API service |
+| **ChromaDB API** | http://localhost:8000 | Vector store direct access |
 
 > **Note:** First build downloads ~750 MB of Python packages (PyTorch, Transformers, etc.) and takes approximately 10–15 minutes. Subsequent builds use Docker layer cache and complete in under 30 seconds.
 
@@ -264,6 +267,72 @@ Also bumped `chromadb==0.4.18` → `chromadb==0.4.24` in `requirements.txt` to m
 
 ### Issue 5 — Invisible text in Settings UI (dark text on dark background)
 
+---
+
+### Issue 6 — Settings not persisting across page refresh (CORS error)
+
+**Symptom:** After saving settings in the Settings tab, values disappear on page refresh. Browser console shows:
+```
+Access to fetch at 'http://localhost:8001/settings' from origin 'http://localhost:7860' has been blocked by CORS policy
+```
+
+**Root Cause:** The Settings tab JavaScript was calling `http://localhost:8001/settings` — a different port than the Gradio UI (port 7860). Even though both are on `localhost`, browsers treat different ports as different origins and block the request.
+
+**Fix Applied (v2.0):** Two changes were made together:
+
+1. `main.py` was updated to mount Gradio onto FastAPI using `gr.mount_gradio_app`, so both the UI and the API are served from the **same process on port 7860**.
+
+2. `dashboard.py` Settings JS was updated to use a relative path:
+
+```js
+// BEFORE (broken — CORS error)
+const API_BASE = window.location.protocol + "//" + window.location.hostname + ":8001";
+
+// AFTER (correct — same-origin, no CORS)
+const API_BASE = "";  // Relative path — FastAPI is on same origin
+```
+
+All `fetch()` calls now use `/settings`, `/status`, `/scan`, `/results` as relative paths.
+
+**To apply without rebuild:**
+```bash
+./manage.sh patch
+```
+
+---
+
+### Issue 7 — Agent Status table was hardcoded (static data)
+
+**Symptom:** The Agent Framework table in the Dashboard always showed the same static statuses regardless of whether agents were actually running or idle. The data was sourced from a hardcoded Python list in `state["agent_statuses"]` and never updated from the real backend.
+
+**Root Cause:** The original implementation used a Python-side `build_agent_status_html()` function that rendered a static snapshot of agent states at page load time. It was never wired to the real `planner.get_all_statuses()` backend method.
+
+**Fix Applied (v2.0):** The entire Agent Status section was rewritten as a dynamic JavaScript block:
+
+```javascript
+async function fetchAgentStatus() {
+    const res = await fetch("/status");  // calls planner.get_all_statuses()
+    const statuses = await res.json();
+    // Renders READY / RUNNING / ERROR badges from live backend data
+    document.getElementById("dynamic-agent-status-container").innerHTML = html;
+}
+
+// Poll every 5 seconds — real-time status updates
+document.addEventListener("DOMContentLoaded", () => {
+    fetchAgentStatus();
+    setInterval(fetchAgentStatus, 5000);
+});
+```
+
+The same pattern was applied to the Deal Opportunities panel (`GET /results`) and the Scan button (`POST /scan`).
+
+**To apply without rebuild:**
+```bash
+./manage.sh patch
+```
+
+### Issue 5 — Invisible text in Settings UI (dark text on dark background)
+
 **Symptom:** All text inside input fields, textboxes, dropdowns, status boxes, and warning messages was invisible — dark text rendered on a dark background.
 
 **Affected elements visible in screenshots:**
@@ -309,6 +378,8 @@ Additional selectors were added for: read-only outputs, dropdowns, number inputs
 
 | Version | Commit | Date | Change |
 |---------|--------|------|--------|
+| v2.0.0 | `e40b2ab` | 2026-07-01 | **fix:** Fully dynamic dashboard — Agent Status, Deals, Logs all driven by live JS polling; Settings CORS fixed; Scan button triggers real backend pipeline |
+| v1.9.0 | `fe54ea4` | 2026-07-01 | **feat:** Mount Gradio onto FastAPI via `gr.mount_gradio_app` — unified port 7860 for UI and API |
 | v1.5.0 | `be3b6bd` | 2026-07-01 | **fix:** Force bright text visibility on all Gradio input/output/status elements |
 | v1.4.0 | `d5af178` | 2026-07-01 | **fix:** Pin chromadb to 0.4.24, fix healthcheck to use python3 urllib instead of curl |
 | v1.3.1 | `41adaf9` | 2026-07-01 | **fix:** Remove torch `+cpu` suffix — use plain `torch==2.0.1` from PyPI |
