@@ -206,3 +206,30 @@ def get_results():
         except:
             return []
     return []
+
+
+@app.get("/logs")
+def get_logs(n: int = 100):
+    """Return the last N lines from the application log or scan activity."""
+    import glob
+    # Check common log file locations
+    log_candidates = [
+        "/tmp/app_test.log",
+        "/app/logs/app.log",
+        "/tmp/priceisright.log",
+    ]
+    log_candidates += glob.glob("/app/logs/*.log")
+    lines = []
+    for log_path in log_candidates:
+        if os.path.exists(log_path):
+            try:
+                with open(log_path, 'r', errors='replace') as f:
+                    all_lines = f.readlines()
+                    lines = [l.rstrip() for l in all_lines[-n:]]
+                if lines:
+                    break
+            except Exception:
+                continue
+    if not lines:
+        lines = ["No log file found. Run a scan to generate activity logs."]
+    return {"lines": lines, "count": len(lines)}

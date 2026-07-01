@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Panels</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: transparent;
+    font-family: 'Courier New', monospace;
+    color: #f7ddd5;
+    padding: 8px;
+  }
+  .panel {
+    background: #1a1008;
+    border: 1px solid #3a2010;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: #1f1208;
+    border-bottom: 1px solid #3a2010;
+    cursor: pointer;
+    user-select: none;
+  }
+  .panel-header h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; }
+  .panel-body { padding: 14px; }
+  .panel-body.collapsed { display: none; }
+
+  /* Agent Status Table */
+  .agent-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .agent-table th {
+    text-align: left; padding: 6px 10px;
+    color: rgba(247,221,213,0.5); font-weight: 600;
+    border-bottom: 1px solid #3a2010; letter-spacing: 0.08em; font-size: 10px;
+  }
+  .agent-table td { padding: 8px 10px; border-bottom: 1px solid rgba(58,32,16,0.5); }
+  .agent-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  }
+  .badge-ready    { background: rgba(76,175,80,0.2);  color: #4caf50; border: 1px solid #4caf50; }
+  .badge-running  { background: rgba(255,160,0,0.2);  color: #ffa000; border: 1px solid #ffa000; }
+  .badge-error    { background: rgba(229,57,53,0.2);  color: #e53935; border: 1px solid #e53935; }
+  .badge-unknown  { background: rgba(120,120,120,0.2);color: #888;    border: 1px solid #888; }
+
+  /* Deal Cards */
+  .deal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .deal-card {
+    background: #1f1208; border: 1px solid #3a2010; border-radius: 8px; padding: 12px;
+  }
+  .deal-title { font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #f7ddd5; }
+  .deal-prices { display: flex; gap: 12px; margin-bottom: 6px; font-size: 11px; }
+  .deal-current { color: #e53935; font-weight: 700; }
+  .deal-predicted { color: #4caf50; font-weight: 700; }
+  .deal-discount {
+    display: inline-block; background: rgba(229,57,53,0.2); color: #e53935;
+    border: 1px solid #e53935; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+  }
+  .empty-msg { color: rgba(247,221,213,0.4); font-size: 12px; text-align: center; padding: 20px 0; }
+
+  /* Log Terminal */
+  .log-terminal {
+    background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 6px;
+    padding: 12px; font-size: 11px; line-height: 1.6; max-height: 200px; overflow-y: auto;
+    color: #a0a0a0;
+  }
+  .log-terminal .log-info  { color: #4caf50; }
+  .log-terminal .log-warn  { color: #ffa000; }
+  .log-terminal .log-error { color: #e53935; }
+  .log-terminal .log-ts    { color: rgba(160,160,160,0.5); margin-right: 8px; }
+  .log-file-header {
+    background: #111; border: 1px solid #2a2a2a; border-radius: 4px;
+    padding: 6px 10px; margin-bottom: 8px; font-size: 11px; display: flex; gap: 6px; align-items: center;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-red { background: #e53935; }
+  .dot-yellow { background: #ffa000; }
+  .dot-green { background: #4caf50; }
+
+  /* Scan Button */
+  .scan-btn {
+    width: 100%; padding: 14px; background: linear-gradient(135deg, #e65100, #ff6d00);
+    color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.05em; transition: opacity 0.2s;
+    font-family: 'Courier New', monospace;
+  }
+  .scan-btn:hover { opacity: 0.9; }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .scan-status { text-align: center; font-size: 11px; margin-top: 6px; min-height: 16px; color: #ffa000; }
+
+  /* Loading spinner */
+  .loading { color: rgba(247,221,213,0.4); font-size: 12px; text-align: center; padding: 16px 0; }
+  .spinner { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- Agent Framework Panel -->
+<div class="panel" id="panel-agents">
+  <div class="panel-header" onclick="togglePanel('agents')">
+    <h3>🤖 Agent Framework</h3>
+    <span id="agents-toggle">▼</span>
+  </div>
+  <div class="panel-body" id="agents-body">
+    <div id="agent-status-container" class="loading"><span class="spinner">⟳</span> Loading agent status...</div>
+  </div>
+</div>
+
+<!-- Deal Opportunities Panel -->
+<div class="panel" id="panel-deals">
+  <div class="panel-header" onclick="togglePanel('deals')">
+    <h3>🔥 Deal Opportunities Found</h3>
+    <span id="deals-toggle">▼</span>
+  </div>
+  <div class="panel-body" id="deals-body">
+    <div id="deals-container" class="loading"><span class="spinner">⟳</span> Loading deals...</div>
+  </div>
+</div>
+
+<!-- Live Agent Logs Panel -->
+<div class="panel" id="panel-logs">
+  <div class="panel-header" onclick="togglePanel('logs')">
+    <h3>📋 Live Agent Logs</h3>
+    <span id="logs-toggle">▼</span>
+  </div>
+  <div class="panel-body" id="logs-body">
+    <div class="log-file-header">
+      <span class="dot dot-red"></span>
+      <span class="dot dot-yellow"></span>
+      <span class="dot dot-green"></span>
+      <span style="color:rgba(247,221,213,0.6); margin-left:4px">agent_orchestrator_v1.2.log</span>
+    </div>
+    <div id="log-terminal" class="log-terminal"><span class="loading">Loading logs...</span></div>
+  </div>
+</div>
+
+<!-- Scan Button -->
+<div style="margin-bottom: 12px;">
+  <button class="scan-btn" id="scan-btn" onclick="triggerScan()">🔍 Scan for Deals Now</button>
+  <div class="scan-status" id="scan-status"></div>
+</div>
+
+<script>
+const API = window.location.origin;
+
+// ── Panel collapse toggle ──────────────────────────────────────────────────
+function togglePanel(name) {
+  const body = document.getElementById(name + '-body');
+  const tog  = document.getElementById(name + '-toggle');
+  if (!body) return;
+  const collapsed = body.classList.toggle('collapsed');
+  if (tog) tog.textContent = collapsed ? '▶' : '▼';
+}
+
+// ── Agent Status ──────────────────────────────────────────────────────────
+async function fetchAgentStatus() {
+  try {
+    const res = await fetch(API + '/status');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const agents = await res.json();
+    const container = document.getElementById('agent-status-container');
+    if (!container) return;
+    if (!agents || agents.length === 0) {
+      container.innerHTML = '<p class="empty-msg">No agents registered.</p>';
+      return;
+    }
+    let rows = agents.map(a => {
+      const badgeClass = {
+        'READY':   'badge-ready',
+        'RUNNING': 'badge-running',
+        'ERROR':   'badge-error'
+      }[a.status] || 'badge-unknown';
+      const ts = a.last_active ? new Date(a.last_active).toLocaleTimeString() : '—';
+      return `<tr>
+        <td>${a.name || '—'}</td>
+        <td style="color:rgba(247,221,213,0.6)">${a.role || '—'}</td>
+        <td style="color:rgba(247,221,213,0.6)">${a.model || '—'}</td>
+        <td><span class="badge ${badgeClass}">${a.status}</span></td>
+        <td style="color:rgba(247,221,213,0.4); font-size:10px">${ts}</td>
+      </tr>`;
+    }).join('');
+    container.innerHTML = `
+      <table class="agent-table">
+        <thead><tr>
+          <th>AGENT</th><th>ROLE</th><th>MODEL</th><th>STATUS</th><th>LAST ACTIVE</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch(e) {
+    const container = document.getElementById('agent-status-container');
+    if (container) container.innerHTML = '<p class="empty-msg">⚠️ Could not load agent status: ' + e.message + '</p>';
+  }
+}
+
+// ── Deals ─────────────────────────────────────────────────────────────────
+async function fetchDeals() {
+  try {
+    const res = await fetch(API + '/results');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const deals = await res.json();
+    const container = document.getElementById('deals-container');
+    if (!container) return;
+    if (!deals || deals.length === 0) {
+      container.innerHTML = '<p class="empty-msg">No deals found yet. Click "Scan for Deals Now" to start.</p>';
+      return;
+    }
+    const cards = deals.map(d => {
+      const disc = d.discount_pct ? Math.round(d.discount_pct) : 0;
+      return `<div class="deal-card">
+        <div class="deal-title">${d.product_name || d.title || 'Unknown Product'}</div>
+        <div class="deal-prices">
+          <span class="deal-current">Current: $${(d.current_price||0).toFixed(2)}</span>
+          <span class="deal-predicted">Predicted: $${(d.predicted_price||0).toFixed(2)}</span>
+        </div>
+        ${disc > 0 ? `<span class="deal-discount">-${disc}% OFF</span>` : ''}
+        ${d.url ? `<div style="margin-top:6px"><a href="${d.url}" target="_blank" style="color:#ffa000; font-size:10px">View Deal →</a></div>` : ''}
+      </div>`;
+    }).join('');
+    container.innerHTML = `<div class="deal-grid">${cards}</div>`;
+  } catch(e) {
+    const container = document.getElementById('deals-container');
+    if (container) container.innerHTML = '<p class="empty-msg">⚠️ Could not load deals: ' + e.message + '</p>';
+  }
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────
+async function fetchLogs() {
+  try {
+    const res = await fetch(API + '/logs');
+    const terminal = document.getElementById('log-terminal');
+    if (!terminal) return;
+    if (!res.ok) {
+      // No /logs endpoint yet — show a placeholder
+      terminal.innerHTML = '<span style="color:rgba(247,221,213,0.4)">No log endpoint available. Run a scan to generate logs.</span>';
+      return;
+    }
+    const data = await res.json();
+    const lines = (data.lines || data.logs || [data.content || '']).filter(Boolean);
+    if (lines.length === 0) {
+      terminal.innerHTML = '<span style="color:rgba(247,221,213,0.4)">No log entries yet.</span>';
+      return;
+    }
+    terminal.innerHTML = lines.map(line => {
+      const cls = line.includes('ERROR') ? 'log-error' : line.includes('WARN') ? 'log-warn' : 'log-info';
+      return `<div class="${cls}">${line}</div>`;
+    }).join('');
+    terminal.scrollTop = terminal.scrollHeight;
+  } catch(e) {
+    const terminal = document.getElementById('log-terminal');
+    if (terminal) terminal.innerHTML = '<span style="color:rgba(247,221,213,0.4)">No log endpoint available. Run a scan to generate logs.</span>';
+  }
+}
+
+// ── Scan trigger ──────────────────────────────────────────────────────────
+async function triggerScan() {
+  const btn = document.getElementById('scan-btn');
+  const status = document.getElementById('scan-status');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Scanning...'; }
+  if (status) status.textContent = 'Scan started — agents are running...';
+  try {
+    const res = await fetch(API + '/scan', { method: 'POST' });
+    const j = await res.json();
+    if (status) status.textContent = '✅ ' + (j.message || 'Scan enqueued. Results will appear shortly.');
+  } catch(e) {
+    if (status) status.textContent = '❌ Scan failed: ' + e.message;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔍 Scan for Deals Now'; }
+    // Refresh data after scan
+    setTimeout(() => { fetchAgentStatus(); fetchDeals(); }, 3000);
+  }
+}
+
+// ── Initial load + polling ────────────────────────────────────────────────
+fetchAgentStatus();
+fetchDeals();
+fetchLogs();
+setInterval(fetchAgentStatus, 5000);
+setInterval(fetchDeals, 10000);
+setInterval(fetchLogs, 15000);
+</script>
+</body>
+</html>
