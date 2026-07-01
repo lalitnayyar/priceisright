@@ -31,19 +31,68 @@ def read_root():
 
 @app.get("/settings")
 def get_ui_settings():
+    """Return current settings using JS field names.
+    Priority: ui_settings.json overrides .env overrides code defaults."""
+    from app.core.config import get_settings
     from app.core.settings_store import SettingsStore
-    from app.ui.dashboard import DEFAULTS
-    saved = SettingsStore.read()
-    return {**DEFAULTS, **saved}
+
+    s = get_settings()          # merged: .env + ui_settings.json
+    ui = SettingsStore.read()   # raw saved dict for fields not in Settings model
+
+    return {
+        # API Keys
+        "OPENAI_API_KEY":     s.OPENAI_API_KEY,
+        "ANTHROPIC_API_KEY":  s.ANTHROPIC_API_KEY,
+        "PUSHOVER_USER":      s.PUSHOVER_USER,
+        "PUSHOVER_TOKEN":     s.PUSHOVER_TOKEN,
+        "MODAL_TOKEN_ID":     s.MODAL_TOKEN_ID,
+        "MODAL_TOKEN_SECRET": s.MODAL_TOKEN_SECRET,
+        # Agent config — use JS key names
+        "DEAL_THRESHOLD":         s.DEAL_THRESHOLD,
+        "SCAN_INTERVAL_MINUTES":  s.SCAN_INTERVAL_MINUTES,
+        "SCANNER_MODEL":          s.SCANNER_MODEL,
+        "FRONTIER_MODEL":         s.FRONTIER_MODEL,
+        "MESSAGING_MODEL":        s.MESSAGING_MODEL,
+        "ENSEMBLE_WEIGHTS":       f"{s.ENSEMBLE_FRONTIER_WEIGHT}, {s.ENSEMBLE_SPECIALIST_WEIGHT}, {s.ENSEMBLE_DNN_WEIGHT}",
+        # RAG
+        "CHROMA_DB_PATH":    s.CHROMA_DB_PATH,
+        "EMBEDDING_MODEL":   s.EMBEDDING_MODEL,
+        "CHROMA_RESULTS":    s.CHROMA_RESULTS_COUNT,
+        "RAG_MAX_POINTS":    int(ui.get("RAG_MAX_POINTS", 1000)),
+        # Notifications
+        "PUSHOVER_SOUND":       ui.get("PUSHOVER_SOUND", "pushover"),
+        "NOTIFICATION_TITLE":   ui.get("NOTIFICATION_TITLE", "The Price Is Right Alert"),
+        "NOTIF_MIN_INTERVAL":   int(ui.get("NOTIF_MIN_INTERVAL", 5)),
+        # Feed Sources
+        "RSS_FEEDS":          s.RSS_FEED_URLS.replace(",", "\n"),
+        "MAX_DEALS_PER_SCAN": int(ui.get("MAX_DEALS_PER_SCAN", 50)),
+        # System
+        "MEMORY_FILE":      s.MEMORY_FILE,
+        "LOG_LEVEL":        s.LOG_LEVEL,
+        "DNN_WEIGHTS_PATH": s.DNN_WEIGHTS_PATH,
+        "DASHBOARD_PORT":   s.DASHBOARD_PORT,
+        "API_PORT":         s.API_PORT,
+    }
 
 @app.post("/settings")
 async def save_ui_settings(request: Request):
+    """Save settings to ui_settings.json (persisted via Docker volume mount).
+    String values are trimmed of whitespace. RSS_FEEDS list items are trimmed too."""
     data = await request.json()
     from app.core.settings_store import SettingsStore
-    from app.ui.dashboard import _write_env
-    SettingsStore.write(data)
-    _write_env(data)
-    return {"status": "success"}
+
+    # Trim all string values
+    cleaned = {}
+    for k, v in data.items():
+        if isinstance(v, str):
+            cleaned[k] = v.strip()
+        elif isinstance(v, list):
+            cleaned[k] = [item.strip() if isinstance(item, str) else item for item in v]
+        else:
+            cleaned[k] = v
+
+    SettingsStore.write(cleaned)
+    return {"status": "success", "saved": len(cleaned)}
 
 @app.post("/scan", response_model=ScanResponse)
 def trigger_scan(background_tasks: BackgroundTasks):

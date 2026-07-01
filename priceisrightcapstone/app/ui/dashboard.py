@@ -1706,6 +1706,8 @@ def create_dashboard():
                             <button type="button" class="pir-btn-secondary" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
                             <button type="button" class="pir-btn-secondary" onclick="validateOnly()">✅ Validate Only</button>
                             <button type="button" class="pir-btn-secondary" onclick="exportSettings()">📤 Export Settings</button>
+                            <button type="button" class="pir-btn-secondary" onclick="document.getElementById('env-file-input').click()">📂 Import .env</button>
+                            <input type="file" id="env-file-input" accept=".env,text/plain" style="display:none" onchange="importEnvFile(this)">
                             <button type="submit" class="pir-btn-primary">💾 Save & Apply</button>
                         </div>
                         <div id="pir-status-msg"></div>
@@ -1928,6 +1930,70 @@ def create_dashboard():
                             statusEl.textContent = "❌ " + e.message;
                             statusEl.className = "pir-test-status err";
                         }
+                    }
+
+                    // ── Import .env file ──────────────────────────────────────────────
+                    function importEnvFile(input) {
+                        const file = input.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const lines = e.target.result.split("\n");
+                            const parsed = {};
+                            lines.forEach(line => {
+                                line = line.trim();
+                                if (!line || line.startsWith("#")) return; // skip comments/blanks
+                                const eqIdx = line.indexOf("=");
+                                if (eqIdx < 1) return;
+                                const key = line.substring(0, eqIdx).trim();
+                                let val = line.substring(eqIdx + 1).trim();
+                                // Strip surrounding quotes if present
+                                if ((val.startsWith('"') && val.endsWith('"')) ||
+                                    (val.startsWith("'") && val.endsWith("'"))) {
+                                    val = val.slice(1, -1);
+                                }
+                                parsed[key] = val;
+                            });
+                            // Map .env keys to form field IDs
+                            const ENV_MAP = {
+                                OPENAI_API_KEY:    "OPENAI_API_KEY",
+                                ANTHROPIC_API_KEY: "ANTHROPIC_API_KEY",
+                                PUSHOVER_USER:     "PUSHOVER_USER",
+                                PUSHOVER_TOKEN:    "PUSHOVER_TOKEN",
+                                MODAL_TOKEN_ID:    "MODAL_TOKEN_ID",
+                                MODAL_TOKEN_SECRET:"MODAL_TOKEN_SECRET",
+                                DEAL_THRESHOLD:    "DEAL_THRESHOLD",
+                                SCAN_INTERVAL_MINUTES: "SCAN_INTERVAL_MINUTES",
+                                SCANNER_MODEL:     "SCANNER_MODEL",
+                                FRONTIER_MODEL:    "FRONTIER_MODEL",
+                                MESSAGING_MODEL:   "MESSAGING_MODEL",
+                                CHROMA_DB_PATH:    "CHROMA_DB_PATH",
+                                EMBEDDING_MODEL:   "EMBEDDING_MODEL",
+                                MEMORY_FILE:       "MEMORY_FILE",
+                                LOG_LEVEL:         "LOG_LEVEL",
+                                DNN_WEIGHTS_PATH:  "DNN_WEIGHTS_PATH",
+                                DASHBOARD_PORT:    "DASHBOARD_PORT",
+                                API_PORT:          "API_PORT",
+                                RSS_FEED_URLS:     "RSS_FEEDS",  // .env uses RSS_FEED_URLS
+                            };
+                            let count = 0;
+                            Object.entries(parsed).forEach(([envKey, envVal]) => {
+                                const fieldId = ENV_MAP[envKey];
+                                if (!fieldId) return;
+                                if (fieldId === "RSS_FEEDS") {
+                                    // Comma-separated in .env → newline-separated in form
+                                    const el = document.getElementById(fieldId);
+                                    if (el) { el.value = envVal.replace(/,/g, "\n"); count++; }
+                                } else {
+                                    setField(fieldId, envVal);
+                                    count++;
+                                }
+                            });
+                            showMsg("✅ Imported " + count + " value(s) from .env — click Save & Apply to persist.", "pir-success");
+                            // Reset file input so same file can be re-imported
+                            input.value = "";
+                        };
+                        reader.readAsText(file);
                     }
 
                     // ── Auto-load on page ready and on tab switch ─────────────────────

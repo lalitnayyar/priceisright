@@ -41,53 +41,85 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
+
 def get_settings() -> Settings:
-    """Load settings dynamically from ui_settings.json if available, fallback to .env/defaults."""
+    """Load settings: .env/env-vars first, then ui_settings.json overrides on top."""
     from app.core.settings_store import SettingsStore
-    
+
     base_settings = Settings()
     ui_data = SettingsStore.read()
-    
+
     if ui_data:
         try:
-            
-            # Map ui_settings.json keys to Settings object
-            if "OPENAI_API_KEY" in ui_data: base_settings.OPENAI_API_KEY = ui_data["OPENAI_API_KEY"]
-            if "ANTHROPIC_API_KEY" in ui_data: base_settings.ANTHROPIC_API_KEY = ui_data["ANTHROPIC_API_KEY"]
-            if "PUSHOVER_USER" in ui_data: base_settings.PUSHOVER_USER = ui_data["PUSHOVER_USER"]
-            if "PUSHOVER_TOKEN" in ui_data: base_settings.PUSHOVER_TOKEN = ui_data["PUSHOVER_TOKEN"]
-            if "MODAL_TOKEN_ID" in ui_data: base_settings.MODAL_TOKEN_ID = ui_data["MODAL_TOKEN_ID"]
-            if "MODAL_TOKEN_SECRET" in ui_data: base_settings.MODAL_TOKEN_SECRET = ui_data["MODAL_TOKEN_SECRET"]
-            
-            if "DEAL_THRESHOLD_PCT" in ui_data: base_settings.DEAL_THRESHOLD = float(ui_data["DEAL_THRESHOLD_PCT"])
-            if "SCAN_INTERVAL_MINUTES" in ui_data: base_settings.SCAN_INTERVAL_MINUTES = int(ui_data["SCAN_INTERVAL_MINUTES"])
-            if "SCANNER_MODEL" in ui_data: base_settings.SCANNER_MODEL = ui_data["SCANNER_MODEL"]
-            if "FRONTIER_MODEL" in ui_data: base_settings.FRONTIER_MODEL = ui_data["FRONTIER_MODEL"]
-            if "MESSAGING_MODEL" in ui_data: base_settings.MESSAGING_MODEL = ui_data["MESSAGING_MODEL"]
-            
+            # ── API Keys ──────────────────────────────────────────────────────
+            for k in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PUSHOVER_USER",
+                      "PUSHOVER_TOKEN", "MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"):
+                if k in ui_data and ui_data[k]:
+                    setattr(base_settings, k, str(ui_data[k]).strip())
+
+            # ── Agent config ──────────────────────────────────────────────────
+            # Support both new key (DEAL_THRESHOLD) and legacy key (DEAL_THRESHOLD_PCT)
+            if "DEAL_THRESHOLD" in ui_data:
+                base_settings.DEAL_THRESHOLD = float(ui_data["DEAL_THRESHOLD"])
+            elif "DEAL_THRESHOLD_PCT" in ui_data:
+                base_settings.DEAL_THRESHOLD = float(ui_data["DEAL_THRESHOLD_PCT"])
+
+            if "SCAN_INTERVAL_MINUTES" in ui_data:
+                base_settings.SCAN_INTERVAL_MINUTES = int(ui_data["SCAN_INTERVAL_MINUTES"])
+
+            for k in ("SCANNER_MODEL", "FRONTIER_MODEL", "MESSAGING_MODEL"):
+                if k in ui_data and ui_data[k]:
+                    setattr(base_settings, k, str(ui_data[k]).strip())
+
             if "ENSEMBLE_WEIGHTS" in ui_data:
-                parts = [float(x.strip()) for x in ui_data["ENSEMBLE_WEIGHTS"].split(",")]
+                parts = [float(x.strip()) for x in str(ui_data["ENSEMBLE_WEIGHTS"]).split(",")]
                 if len(parts) == 3:
                     base_settings.ENSEMBLE_FRONTIER_WEIGHT = parts[0]
                     base_settings.ENSEMBLE_SPECIALIST_WEIGHT = parts[1]
                     base_settings.ENSEMBLE_DNN_WEIGHT = parts[2]
-            
-            if "CHROMADB_STORAGE_PATH" in ui_data: base_settings.CHROMA_DB_PATH = ui_data["CHROMADB_STORAGE_PATH"]
-            if "EMBEDDING_MODEL" in ui_data: base_settings.EMBEDDING_MODEL = ui_data["EMBEDDING_MODEL"]
-            
+
+            # ── RAG ───────────────────────────────────────────────────────────
+            # Support both new key (CHROMA_DB_PATH) and legacy key (CHROMADB_STORAGE_PATH)
+            if "CHROMA_DB_PATH" in ui_data and ui_data["CHROMA_DB_PATH"]:
+                base_settings.CHROMA_DB_PATH = str(ui_data["CHROMA_DB_PATH"]).strip()
+            elif "CHROMADB_STORAGE_PATH" in ui_data and ui_data["CHROMADB_STORAGE_PATH"]:
+                base_settings.CHROMA_DB_PATH = str(ui_data["CHROMADB_STORAGE_PATH"]).strip()
+
+            if "EMBEDDING_MODEL" in ui_data and ui_data["EMBEDDING_MODEL"]:
+                base_settings.EMBEDDING_MODEL = str(ui_data["EMBEDDING_MODEL"]).strip()
+
+            if "CHROMA_RESULTS" in ui_data:
+                base_settings.CHROMA_RESULTS_COUNT = int(ui_data["CHROMA_RESULTS"])
+
+            # ── RSS Feeds ─────────────────────────────────────────────────────
             if "RSS_FEEDS" in ui_data:
-                if isinstance(ui_data["RSS_FEEDS"], list):
-                    base_settings.RSS_FEED_URLS = ",".join(ui_data["RSS_FEEDS"])
+                feeds = ui_data["RSS_FEEDS"]
+                if isinstance(feeds, list):
+                    base_settings.RSS_FEED_URLS = ",".join(f.strip() for f in feeds if f.strip())
                 else:
-                    base_settings.RSS_FEED_URLS = ",".join(line.strip() for line in ui_data["RSS_FEEDS"].splitlines() if line.strip())
-                
+                    base_settings.RSS_FEED_URLS = ",".join(
+                        line.strip() for line in str(feeds).splitlines() if line.strip()
+                    )
+
+            # ── System ────────────────────────────────────────────────────────
+            if "LOG_LEVEL" in ui_data and ui_data["LOG_LEVEL"]:
+                base_settings.LOG_LEVEL = str(ui_data["LOG_LEVEL"]).strip()
+            if "MEMORY_FILE" in ui_data and ui_data["MEMORY_FILE"]:
+                base_settings.MEMORY_FILE = str(ui_data["MEMORY_FILE"]).strip()
+            if "DNN_WEIGHTS_PATH" in ui_data and ui_data["DNN_WEIGHTS_PATH"]:
+                base_settings.DNN_WEIGHTS_PATH = str(ui_data["DNN_WEIGHTS_PATH"]).strip()
+            if "DASHBOARD_PORT" in ui_data:
+                base_settings.DASHBOARD_PORT = int(ui_data["DASHBOARD_PORT"])
+            if "API_PORT" in ui_data:
+                base_settings.API_PORT = int(ui_data["API_PORT"])
+
         except Exception as e:
-            print(f"Warning: Failed to load dynamic settings: {e}")
-            
+            print(f"Warning: Failed to apply ui_settings.json overrides: {e}")
+
     return base_settings
 
-# Provide a dynamic proxy object so `from app.core.config import settings` 
-# always fetches the latest values when accessed
+
+# Dynamic proxy — `from app.core.config import settings` always returns fresh values
 class SettingsProxy:
     def __getattr__(self, name):
         return getattr(get_settings(), name)
