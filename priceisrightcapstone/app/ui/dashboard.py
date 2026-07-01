@@ -333,164 +333,189 @@ input[type="range"] {
 ::-webkit-scrollbar-thumb:hover { background: var(--outline-variant); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TEXT VISIBILITY FIXES — Force bright text on ALL input/output elements
-   Overrides Gradio Base theme dark-on-dark rendering
+   NUCLEAR TEXT VISIBILITY FIX v2
+   Targets every possible Gradio 4.x / Svelte-scoped element
+   Uses universal selectors so no hashed class name can escape
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* All textbox inputs and textareas */
-input[type="text"],
-input[type="password"],
-input[type="email"],
-input[type="number"],
-textarea,
-.gr-text-input input,
-.gr-text-input textarea,
-[data-testid="textbox"] input,
-[data-testid="textbox"] textarea,
-.block textarea,
-.block input {
+/* ── 1. Universal input / textarea / select ─────────────────────────────── */
+input, textarea, select {
     color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
     background-color: #1a0a00 !important;
     caret-color: #ffb59d !important;
-    -webkit-text-fill-color: #f7ddd5 !important;
 }
 
-/* Placeholder text */
-input::placeholder,
-textarea::placeholder,
-[data-testid="textbox"] input::placeholder,
-[data-testid="textbox"] textarea::placeholder {
+/* ── 2. Placeholder text ────────────────────────────────────────────────── */
+input::placeholder, textarea::placeholder {
     color: #7a5a50 !important;
     -webkit-text-fill-color: #7a5a50 !important;
     opacity: 1 !important;
 }
 
-/* Read-only / non-interactive textboxes (status outputs) */
-input[readonly],
-textarea[readonly],
-.gr-text-input input[readonly],
-.gr-text-input textarea[readonly] {
-    color: #f7ddd5 !important;
-    -webkit-text-fill-color: #f7ddd5 !important;
-    background-color: #1a0a00 !important;
-}
-
-/* Dropdown selects */
-select,
-.gr-dropdown select,
-[data-testid="dropdown"] select,
-.gr-dropdown input {
-    color: #f7ddd5 !important;
-    background-color: #1a0a00 !important;
-    -webkit-text-fill-color: #f7ddd5 !important;
-}
-
-/* Dropdown list items */
-.gr-dropdown ul li,
-.gr-dropdown .item,
-ul.options li {
-    color: #f7ddd5 !important;
-    background-color: #2a1c18 !important;
-}
-
-.gr-dropdown ul li:hover,
-.gr-dropdown .item:hover {
-    background-color: #41312c !important;
+/* ── 3. Disabled / read-only (status output boxes) ─────────────────────── */
+input:disabled, textarea:disabled,
+input[disabled], textarea[disabled],
+input[readonly], textarea[readonly] {
     color: #ffb59d !important;
-}
-
-/* Gradio Textbox wrapper */
-.svelte-1ipelgc,
-.wrap.svelte-1ipelgc {
-    color: #f7ddd5 !important;
-}
-
-/* Number inputs */
-input[type="number"] {
-    color: #f7ddd5 !important;
-    -webkit-text-fill-color: #f7ddd5 !important;
+    -webkit-text-fill-color: #ffb59d !important;
     background-color: #1a0a00 !important;
+    opacity: 1 !important;
 }
 
-/* Slider value display */
-.gr-slider input[type="number"],
-.wrap input[type="number"] {
+/* ── 4. Slider number value pill ────────────────────────────────────────── */
+.gradio-slider input[type="number"],
+.gradio-slider input,
+[data-testid="slider"] input,
+.wrap > input[type="number"],
+fieldset input[type="number"] {
     color: #f7ddd5 !important;
     -webkit-text-fill-color: #f7ddd5 !important;
     background-color: #2a1c18 !important;
     border: 1px solid #594139 !important;
     border-radius: 4px !important;
-    padding: 2px 6px !important;
 }
 
-/* Code block outputs (export preview) */
-.gr-code,
-.cm-editor,
-.cm-content,
-.cm-line {
-    color: #f7ddd5 !important;
-    background-color: #1a0a00 !important;
-}
-
-/* Status / output textboxes (non-interactive result boxes) */
-.output-class textarea,
-.output-class input,
-[data-testid="textbox"][disabled] textarea,
-[data-testid="textbox"][disabled] input {
+/* ── 5. Dropdown: selected value text ───────────────────────────────────── */
+.gradio-dropdown input,
+.gradio-dropdown span,
+[data-testid="dropdown"] input,
+[data-testid="dropdown"] span,
+.multiselect span,
+.token span,
+.wrap span {
     color: #f7ddd5 !important;
     -webkit-text-fill-color: #f7ddd5 !important;
-    background-color: #1a0a00 !important;
 }
 
-/* Warning / validation message boxes */
-.gr-textbox-warning,
-.gr-textbox-error {
+/* ── 6. Dropdown list popup ─────────────────────────────────────────────── */
+.dropdown-arrow,
+ul.options, ul.options li,
+.item, .item span,
+.list-items, .list-items li {
+    color: #f7ddd5 !important;
+    background-color: #2a1c18 !important;
+}
+ul.options li:hover, .item:hover {
+    background-color: #41312c !important;
     color: #ffb59d !important;
-    -webkit-text-fill-color: #ffb59d !important;
 }
 
-/* Accordion labels */
-.gr-accordion .label-wrap span,
-.gr-accordion summary,
-.gr-accordion summary span {
+/* ── 7. Page headings and markdown prose ────────────────────────────────── */
+.gradio-container h1,
+.gradio-container h2,
+.gradio-container h3,
+.gradio-container h4,
+.gradio-container p,
+.prose h1, .prose h2, .prose h3,
+.prose p, .prose li,
+.md h1, .md h2, .md h3,
+.md p, .md li {
     color: #f7ddd5 !important;
 }
 
-/* Dataframe cells */
-.gr-dataframe td,
-.gr-dataframe tbody td {
+/* ── 8. All span/div text inside form blocks ────────────────────────────── */
+.block span:not(.badge-ready):not(.badge-running):not(.badge-error):not(.heartbeat-ready):not(.heartbeat-running):not(.heartbeat-error),
+.block p,
+.block div:not(.terminal-panel):not(.deal-card) {
+    color: #f7ddd5 !important;
+}
+
+/* ── 9. Label text above every input ────────────────────────────────────── */
+label, .block label, fieldset label,
+.label-wrap, .label-wrap span,
+.gr-block label, .gr-form label {
+    color: #e1bfb5 !important;
+    -webkit-text-fill-color: #e1bfb5 !important;
+}
+
+/* ── 10. Accordion / details summary text ───────────────────────────────── */
+details summary, details summary span,
+.gr-accordion summary, .gr-accordion summary span,
+[data-testid="accordion"] summary {
+    color: #f7ddd5 !important;
+}
+
+/* ── 11. Gradio v4 Svelte-scoped wrappers (catch-all) ───────────────────── */
+[class*="svelte-"] input,
+[class*="svelte-"] textarea,
+[class*="svelte-"] select,
+[class*="svelte-"] span:not(.badge-ready):not(.badge-running):not(.badge-error) {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+}
+
+/* ── 12. Code / export preview block ────────────────────────────────────── */
+.cm-editor, .cm-content, .cm-line,
+.codemirror-wrapper, .code-wrap {
+    color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+}
+
+/* ── 13. Dataframe cells ────────────────────────────────────────────────── */
+table td, table th,
+.gr-dataframe td, .gr-dataframe th {
     color: #f7ddd5 !important;
     background-color: #1d100c !important;
 }
-
-/* Gradio v4 specific — svelte-generated input wrappers */
-.svelte-a4bfok input,
-.svelte-a4bfok textarea,
-.svelte-1cl284s input,
-.svelte-1cl284s textarea {
-    color: #f7ddd5 !important;
-    -webkit-text-fill-color: #f7ddd5 !important;
-}
-
-/* Force all paragraph and span text inside blocks to be visible */
-.block p,
-.block span:not(.badge-ready):not(.badge-running):not(.badge-error):not(.heartbeat-ready):not(.heartbeat-running):not(.heartbeat-error) {
-    color: #f7ddd5 !important;
-}
-
-/* Markdown rendered text */
-.prose p, .prose li, .prose h1, .prose h2, .prose h3 {
-    color: #f7ddd5 !important;
-}
-
-/* Gradio label text above inputs */
-.gr-form label,
-.gr-block label,
-.block label,
-fieldset label,
-.label-wrap {
+.gr-dataframe th {
     color: #e1bfb5 !important;
+    background-color: #261814 !important;
 }
+
+/* ── 14. Buttons secondary text ─────────────────────────────────────────── */
+.gr-button-secondary, button.secondary {
+    color: #f7ddd5 !important;
+    border-color: #594139 !important;
+}
+
+/* ── 15. Scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1d100c; }
+::-webkit-scrollbar-thumb { background: #41312c; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #594139; }
+"""
+
+# JavaScript injected into the page to forcibly fix text after Svelte renders
+_JS_FIX = """
+function fixTextVisibility() {
+    const BRIGHT = '#f7ddd5';
+    const DIM    = '#e1bfb5';
+    const BG     = '#1a0a00';
+    const selectors = [
+        'input', 'textarea', 'select',
+        '.block span', '.block p',
+        'label', '.label-wrap',
+        'details summary'
+    ];
+    selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+            const tag = el.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+                el.style.setProperty('color', BRIGHT, 'important');
+                el.style.setProperty('-webkit-text-fill-color', BRIGHT, 'important');
+                el.style.setProperty('background-color', BG, 'important');
+                if (el.disabled || el.readOnly) {
+                    el.style.setProperty('-webkit-text-fill-color', '#ffb59d', 'important');
+                    el.style.setProperty('color', '#ffb59d', 'important');
+                }
+            } else if (tag === 'label' || el.classList.contains('label-wrap')) {
+                el.style.setProperty('color', DIM, 'important');
+            } else {
+                const skip = ['badge-ready','badge-running','badge-error',
+                              'heartbeat-ready','heartbeat-running','heartbeat-error'];
+                if (!skip.some(c => el.classList.contains(c))) {
+                    el.style.setProperty('color', BRIGHT, 'important');
+                }
+            }
+        });
+    });
+}
+setTimeout(fixTextVisibility, 500);
+setTimeout(fixTextVisibility, 1500);
+setTimeout(fixTextVisibility, 3000);
+const obs = new MutationObserver(() => fixTextVisibility());
+obs.observe(document.body, { childList: true, subtree: true });
 """
 
 def build_agent_status_html(statuses: list) -> str:
@@ -782,6 +807,7 @@ def create_dashboard():
     with gr.Blocks(
         title="The Price Is Right — AI Deal Hunter",
         css=CUSTOM_CSS,
+        js=_JS_FIX,
         theme=gr.themes.Base(
             primary_hue=gr.themes.colors.orange,
             secondary_hue=gr.themes.colors.teal,
