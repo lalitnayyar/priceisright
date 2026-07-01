@@ -31,6 +31,43 @@ CUSTOM_CSS = """
     --error: #ffb4ab;
     --error-container: #93000a;
     --on-error-container: #ffdad6;
+
+    /* ── Override every Gradio theme token that controls text color ── */
+    --body-text-color: #f7ddd5 !important;
+    --body-text-color-subdued: #e1bfb5 !important;
+    --color-text-body: #f7ddd5 !important;
+    --color-text-label: #e1bfb5 !important;
+    --color-text-secondary: #e1bfb5 !important;
+    --input-text-color: #f7ddd5 !important;
+    --input-placeholder-color: #7a5a50 !important;
+    --input-background-fill: #1a0a00 !important;
+    --input-background-fill-focus: #261814 !important;
+    --input-background-fill-hover: #1d100c !important;
+    --input-border-color: #594139 !important;
+    --input-border-color-focus: #ffb59d !important;
+    --input-shadow: none !important;
+    --input-shadow-focus: 0 0 0 2px rgba(255,181,157,0.25) !important;
+    --block-background-fill: #2a1c18 !important;
+    --block-border-color: #594139 !important;
+    --block-label-text-color: #e1bfb5 !important;
+    --block-title-text-color: #f7ddd5 !important;
+    --panel-background-fill: #261814 !important;
+    --panel-border-color: #594139 !important;
+    --checkbox-background-color: #1a0a00 !important;
+    --checkbox-border-color: #594139 !important;
+    --checkbox-label-text-color: #f7ddd5 !important;
+    --slider-color: #ffb59d !important;
+    --table-text-color: #f7ddd5 !important;
+    --table-row-focus: rgba(255,181,157,0.08) !important;
+    --button-secondary-text-color: #f7ddd5 !important;
+    --button-secondary-background-fill: #2a1c18 !important;
+    --button-secondary-border-color: #594139 !important;
+    --button-primary-text-color: #5d1900 !important;
+    --button-primary-background-fill: #ffb59d !important;
+    --accordion-text-color: #f7ddd5 !important;
+    --stat-background-fill: #2a1c18 !important;
+    --color-accent: #ffb59d !important;
+    --color-accent-soft: rgba(255,181,157,0.15) !important;
 }
 
 body, .gradio-container {
@@ -476,46 +513,118 @@ table td, table th,
 ::-webkit-scrollbar-thumb:hover { background: #594139; }
 """
 
-# JavaScript injected into the page to forcibly fix text after Svelte renders
+# JavaScript injected into the page — injects a <style> tag that cannot be overridden
 _JS_FIX = """
-function fixTextVisibility() {
-    const BRIGHT = '#f7ddd5';
-    const DIM    = '#e1bfb5';
-    const BG     = '#1a0a00';
-    const selectors = [
-        'input', 'textarea', 'select',
-        '.block span', '.block p',
-        'label', '.label-wrap',
-        'details summary'
-    ];
-    selectors.forEach(sel => {
-        document.querySelectorAll(sel).forEach(el => {
-            const tag = el.tagName.toLowerCase();
-            if (tag === 'input' || tag === 'textarea' || tag === 'select') {
-                el.style.setProperty('color', BRIGHT, 'important');
-                el.style.setProperty('-webkit-text-fill-color', BRIGHT, 'important');
-                el.style.setProperty('background-color', BG, 'important');
-                if (el.disabled || el.readOnly) {
-                    el.style.setProperty('-webkit-text-fill-color', '#ffb59d', 'important');
-                    el.style.setProperty('color', '#ffb59d', 'important');
-                }
-            } else if (tag === 'label' || el.classList.contains('label-wrap')) {
-                el.style.setProperty('color', DIM, 'important');
-            } else {
-                const skip = ['badge-ready','badge-running','badge-error',
-                              'heartbeat-ready','heartbeat-running','heartbeat-error'];
-                if (!skip.some(c => el.classList.contains(c))) {
-                    el.style.setProperty('color', BRIGHT, 'important');
-                }
+(function() {
+    // Inject a high-priority <style> tag into <head> — runs before Svelte hydration
+    const style = document.createElement('style');
+    style.id = 'price-is-right-fix';
+    style.innerHTML = `
+        /* === PRICE IS RIGHT — FORCED VISIBILITY FIX === */
+        :root {
+            --body-text-color: #f7ddd5 !important;
+            --input-text-color: #f7ddd5 !important;
+            --input-background-fill: #1a0a00 !important;
+            --block-label-text-color: #e1bfb5 !important;
+            --block-title-text-color: #f7ddd5 !important;
+        }
+        /* Universal element overrides with max specificity */
+        html body .gradio-container input,
+        html body .gradio-container textarea,
+        html body .gradio-container select {
+            color: #f7ddd5 !important;
+            -webkit-text-fill-color: #f7ddd5 !important;
+            background-color: #1a0a00 !important;
+            caret-color: #ffb59d !important;
+            opacity: 1 !important;
+        }
+        html body .gradio-container input::placeholder,
+        html body .gradio-container textarea::placeholder {
+            color: #7a5a50 !important;
+            -webkit-text-fill-color: #7a5a50 !important;
+            opacity: 1 !important;
+        }
+        html body .gradio-container input:disabled,
+        html body .gradio-container textarea:disabled,
+        html body .gradio-container input[disabled],
+        html body .gradio-container textarea[disabled],
+        html body .gradio-container input[readonly],
+        html body .gradio-container textarea[readonly] {
+            color: #ffb59d !important;
+            -webkit-text-fill-color: #ffb59d !important;
+            background-color: #1a0a00 !important;
+            opacity: 1 !important;
+        }
+        html body .gradio-container label,
+        html body .gradio-container .label-wrap,
+        html body .gradio-container .label-wrap span,
+        html body .gradio-container fieldset > label {
+            color: #e1bfb5 !important;
+            -webkit-text-fill-color: #e1bfb5 !important;
+        }
+        html body .gradio-container span,
+        html body .gradio-container p,
+        html body .gradio-container h1,
+        html body .gradio-container h2,
+        html body .gradio-container h3,
+        html body .gradio-container h4 {
+            color: #f7ddd5 !important;
+        }
+        html body .gradio-container details summary,
+        html body .gradio-container details summary span {
+            color: #f7ddd5 !important;
+        }
+    `;
+    // Insert at end of head so it wins over everything
+    if (document.head) {
+        document.head.appendChild(style);
+    } else {
+        document.addEventListener('DOMContentLoaded', () => document.head.appendChild(style));
+    }
+
+    // Also apply inline styles after DOM is ready (belt-and-suspenders)
+    function applyInlineStyles() {
+        const BRIGHT = '#f7ddd5';
+        const DIM    = '#e1bfb5';
+        const BG     = '#1a0a00';
+        const WARN   = '#ffb59d';
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            el.style.setProperty('color', BRIGHT, 'important');
+            el.style.setProperty('-webkit-text-fill-color', BRIGHT, 'important');
+            el.style.setProperty('background-color', BG, 'important');
+            el.style.setProperty('opacity', '1', 'important');
+            if (el.disabled || el.readOnly || el.getAttribute('disabled') !== null) {
+                el.style.setProperty('color', WARN, 'important');
+                el.style.setProperty('-webkit-text-fill-color', WARN, 'important');
             }
         });
+        document.querySelectorAll('label, .label-wrap, .label-wrap span').forEach(el => {
+            el.style.setProperty('color', DIM, 'important');
+            el.style.setProperty('-webkit-text-fill-color', DIM, 'important');
+        });
+        const skipClasses = new Set(['badge-ready','badge-running','badge-error',
+                                      'heartbeat-ready','heartbeat-running','heartbeat-error']);
+        document.querySelectorAll('span, p, h1, h2, h3, h4, details summary').forEach(el => {
+            if (![...el.classList].some(c => skipClasses.has(c))) {
+                el.style.setProperty('color', BRIGHT, 'important');
+            }
+        });
+    }
+
+    // Run at multiple intervals to catch Svelte hydration at any timing
+    [200, 600, 1200, 2500, 5000].forEach(t => setTimeout(applyInlineStyles, t));
+
+    // Watch for any DOM mutations and re-apply
+    const observer = new MutationObserver(mutations => {
+        let hasInputs = mutations.some(m =>
+            [...m.addedNodes].some(n => n.nodeType === 1 &&
+                (n.matches('input,textarea,select,label') ||
+                 n.querySelector('input,textarea,select,label')))
+        );
+        if (hasInputs) applyInlineStyles();
     });
-}
-setTimeout(fixTextVisibility, 500);
-setTimeout(fixTextVisibility, 1500);
-setTimeout(fixTextVisibility, 3000);
-const obs = new MutationObserver(() => fixTextVisibility());
-obs.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
 """
 
 def build_agent_status_html(statuses: list) -> str:
@@ -814,6 +923,44 @@ def create_dashboard():
             neutral_hue=gr.themes.colors.stone,
             font=gr.themes.GoogleFont("Hanken Grotesk"),
             font_mono=gr.themes.GoogleFont("JetBrains Mono"),
+            text_size=gr.themes.sizes.text_md,
+        ).set(
+            # ── Body text ──────────────────────────────────────────────────
+            body_text_color="#f7ddd5",
+            body_text_color_subdued="#e1bfb5",
+            # ── Input fields ───────────────────────────────────────────────
+            input_background_fill="#1a0a00",
+            input_background_fill_dark="#1a0a00",
+            input_background_fill_focus="#261814",
+            input_border_color="#594139",
+            input_border_color_focus="#ffb59d",
+            input_placeholder_color="#7a5a50",
+            # ── Blocks / panels ────────────────────────────────────────────
+            block_background_fill="#2a1c18",
+            block_background_fill_dark="#2a1c18",
+            block_border_color="#594139",
+            block_label_text_color="#e1bfb5",
+            block_label_text_color_dark="#e1bfb5",
+            block_title_text_color="#f7ddd5",
+            block_title_text_color_dark="#f7ddd5",
+            panel_background_fill="#261814",
+            panel_border_color="#594139",
+            # ── Buttons ────────────────────────────────────────────────────
+            button_secondary_text_color="#f7ddd5",
+            button_secondary_background_fill="#2a1c18",
+            button_secondary_border_color="#594139",
+            button_primary_text_color="#5d1900",
+            button_primary_background_fill="#ffb59d",
+            # ── Table ──────────────────────────────────────────────────────
+            table_text_color="#f7ddd5",
+            # ── Checkbox ───────────────────────────────────────────────────
+            checkbox_background_color="#1a0a00",
+            checkbox_border_color="#594139",
+            checkbox_label_text_color="#f7ddd5",
+            # ── Slider ─────────────────────────────────────────────────────
+            slider_color="#ffb59d",
+            # ── Stat card ──────────────────────────────────────────────────
+            stat_background_fill="#2a1c18",
         )
     ) as app:
 
