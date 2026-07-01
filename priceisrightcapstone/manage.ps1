@@ -21,7 +21,10 @@ param (
     [string]$Command = "help",
 
     [Parameter(Position=1)]
-    [string]$Service = "app"
+    [string]$Service = "app",
+
+    [Parameter(Position=2)]
+    [string]$File = ""
 )
 
 $AppDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -190,6 +193,32 @@ function Patch-App {
     Write-Ok "Patch applied and services restarted."
 }
 
+function Import-Settings {
+    Write-Header "Importing Settings from JSON"
+    if (-not $Service -or $Service -eq "app") {
+        Write-Error "Usage: .\manage.ps1 import-settings <path\to\settings.json>"
+        exit 1
+    }
+    # $Service is used as the file path since it's the first positional arg after command
+    if (-not (Test-Path $Service)) {
+        Write-Error "File not found: $Service"
+        exit 1
+    }
+    New-Item -ItemType Directory -Force -Path "data" | Out-Null
+    Copy-Item $Service "data\ui_settings.json" -Force
+    Write-Ok "Settings imported to data\ui_settings.json"
+    
+    Detect-Docker
+    $running = Invoke-DC "ps"
+    if ($running -match "Up") {
+        Write-Info "Restarting app and api to apply new settings..."
+        Invoke-DC "restart app api"
+        Write-Ok "Services restarted."
+    } else {
+        Write-Info "Run '.\manage.ps1 deploy' or 'start' to launch with new settings."
+    }
+}
+
 function Show-Logs {
     Detect-Docker
     Write-Info "Streaming logs for service: $Service (Ctrl+C to stop)"
@@ -277,6 +306,7 @@ function Show-Help {
         @("restart",  "Restart all services"),
         @("test",     "Run 118-test suite and generate Markdown report"),
         @("patch",    "Git pull and restart app + api services"),
+        @("import-settings", "Import exported settings.json file"),
         @("logs",     "Stream logs (default: app, pass service name as 2nd arg)"),
         @("status",   "Show container status"),
         @("diagnose", "Run environment diagnostic check"),
@@ -302,6 +332,7 @@ switch ($Command.ToLower()) {
     "restart"  { Restart-App }
     "test"     { Run-Tests }
     "patch"    { Patch-App }
+    "import-settings" { Import-Settings }
     "logs"     { Show-Logs }
     "status"   { Show-Status }
     "diagnose" { Run-Diagnose }

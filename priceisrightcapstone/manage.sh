@@ -251,6 +251,7 @@ case "${1:-help}" in
     logs)     cmd_logs "$@" ;;
     status)   cmd_status ;;
     diagnose) cmd_diagnose ;;
+    import-settings) cmd_import_settings "$@" ;;
     help|--help|-h) cmd_help ;;
     *)
         error "Unknown command: ${1}"

@@ -1031,61 +1031,249 @@ def create_dashboard():
             gr.update(value=build_logs_html(state["logs"])),
         )
 
+    # ── Persistence helpers ──────────────────────────────────────────────────
+    SETTINGS_JSON_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "ui_settings.json")
+    SETTINGS_JSON_PATH = os.path.normpath(SETTINGS_JSON_PATH)
+    EXPORT_JSON_PATH   = os.path.join(os.path.dirname(__file__), "..", "..", "data", "settings_export.json")
+    EXPORT_JSON_PATH   = os.path.normpath(EXPORT_JSON_PATH)
+    ENV_PATH           = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+    ENV_PATH           = os.path.normpath(ENV_PATH)
+
+    os.makedirs(os.path.dirname(SETTINGS_JSON_PATH), exist_ok=True)
+
+    DEFAULTS = {
+        "OPENAI_API_KEY": "",
+        "ANTHROPIC_API_KEY": "",
+        "PUSHOVER_USER": "",
+        "PUSHOVER_TOKEN": "",
+        "MODAL_TOKEN_ID": "",
+        "MODAL_TOKEN_SECRET": "",
+        "DEAL_THRESHOLD": 50.0,
+        "SCAN_INTERVAL_MINUTES": 5,
+        "SCANNER_MODEL": "gpt-4o-mini",
+        "FRONTIER_MODEL": "gpt-4o",
+        "MESSAGING_MODEL": "claude-3-5-sonnet-20241022",
+        "ENSEMBLE_WEIGHTS": "0.8, 0.1, 0.1",
+        "CHROMA_DB_PATH": "./data/products_vectorstore",
+        "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2",
+        "CHROMA_RESULTS": 5,
+        "RAG_MAX_POINTS": 1000,
+        "PUSHOVER_SOUND": "pushover",
+        "NOTIFICATION_TITLE": "The Price Is Right Alert",
+        "NOTIF_MIN_INTERVAL": 5,
+        "RSS_FEEDS": "https://www.dealnews.com/rss.html\nhttps://feeds.feedburner.com/techbargains\nhttps://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1",
+        "MAX_DEALS_PER_SCAN": 50,
+        "MEMORY_FILE": "./data/memory.json",
+        "LOG_LEVEL": "INFO",
+        "DNN_WEIGHTS_PATH": "./data/dnn_weights.pt",
+        "DASHBOARD_PORT": 7860,
+        "API_PORT": 8000,
+    }
+
+    def _load_persisted():
+        """Load saved settings from ui_settings.json, falling back to DEFAULTS."""
+        try:
+            if os.path.exists(SETTINGS_JSON_PATH):
+                with open(SETTINGS_JSON_PATH, "r") as f:
+                    saved = json.load(f)
+                merged = {**DEFAULTS, **saved}
+                return merged
+        except Exception:
+            pass
+        return dict(DEFAULTS)
+
+    def _write_env(d: dict):
+        """Write all settings to .env file."""
+        rss_oneline = ",".join(line.strip() for line in d.get("RSS_FEEDS", "").splitlines() if line.strip())
+        lines = [
+            f"OPENAI_API_KEY={d.get('OPENAI_API_KEY', '')}",
+            f"ANTHROPIC_API_KEY={d.get('ANTHROPIC_API_KEY', '')}",
+            f"PUSHOVER_USER={d.get('PUSHOVER_USER', '')}",
+            f"PUSHOVER_TOKEN={d.get('PUSHOVER_TOKEN', '')}",
+            f"MODAL_TOKEN_ID={d.get('MODAL_TOKEN_ID', '')}",
+            f"MODAL_TOKEN_SECRET={d.get('MODAL_TOKEN_SECRET', '')}",
+            f"DEAL_THRESHOLD={d.get('DEAL_THRESHOLD', 50)}",
+            f"SCAN_INTERVAL_MINUTES={int(d.get('SCAN_INTERVAL_MINUTES', 5))}",
+            f"SCANNER_MODEL={d.get('SCANNER_MODEL', 'gpt-4o-mini')}",
+            f"FRONTIER_MODEL={d.get('FRONTIER_MODEL', 'gpt-4o')}",
+            f"MESSAGING_MODEL={d.get('MESSAGING_MODEL', 'claude-3-5-sonnet-20241022')}",
+            f"ENSEMBLE_WEIGHTS={d.get('ENSEMBLE_WEIGHTS', '0.8, 0.1, 0.1')}",
+            f"CHROMA_DB_PATH={d.get('CHROMA_DB_PATH', './data/products_vectorstore')}",
+            f"EMBEDDING_MODEL={d.get('EMBEDDING_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')}",
+            f"RSS_FEED_URLS={rss_oneline}",
+            f"MAX_DEALS_PER_SCAN={int(d.get('MAX_DEALS_PER_SCAN', 50))}",
+            f"PUSHOVER_SOUND={d.get('PUSHOVER_SOUND', 'pushover')}",
+            f"NOTIFICATION_TITLE={d.get('NOTIFICATION_TITLE', 'The Price Is Right Alert')}",
+            f"NOTIF_MIN_INTERVAL={int(d.get('NOTIF_MIN_INTERVAL', 5))}",
+            f"MEMORY_FILE={d.get('MEMORY_FILE', './data/memory.json')}",
+            f"LOG_LEVEL={d.get('LOG_LEVEL', 'INFO')}",
+            f"DNN_WEIGHTS_PATH={d.get('DNN_WEIGHTS_PATH', './data/dnn_weights.pt')}",
+            f"DASHBOARD_PORT={int(d.get('DASHBOARD_PORT', 7860))}",
+            f"API_PORT={int(d.get('API_PORT', 8000))}",
+        ]
+        with open(ENV_PATH, "w") as f:
+            f.write("\n".join(lines) + "\n")
+
     def save_settings(openai_key, anthropic_key, pushover_user, pushover_token, modal_id, modal_secret,
                       deal_threshold, scan_interval, scanner_model, frontier_model, messaging_model,
-                      ens_weights, chroma_path, embed_model, rss_feeds, max_deals):
-        lines = [
-            f"OPENAI_API_KEY={openai_key}",
-            f"ANTHROPIC_API_KEY={anthropic_key}",
-            f"PUSHOVER_USER={pushover_user}",
-            f"PUSHOVER_TOKEN={pushover_token}",
-            f"MODAL_TOKEN_ID={modal_id}",
-            f"MODAL_TOKEN_SECRET={modal_secret}",
-            f"DEAL_THRESHOLD={deal_threshold}",
-            f"SCAN_INTERVAL_MINUTES={int(scan_interval)}",
-            f"SCANNER_MODEL={scanner_model}",
-            f"FRONTIER_MODEL={frontier_model}",
-            f"MESSAGING_MODEL={messaging_model}",
-            f"CHROMA_DB_PATH={chroma_path}",
-            f"EMBEDDING_MODEL={embed_model}",
-            f"RSS_FEED_URLS={','.join(rss_feeds.strip().split())}",
-        ]
+                      ens_weights, chroma_path, embed_model, chroma_results, rag_max_points,
+                      notif_sound, notif_title, notif_min_interval,
+                      rss_feeds, max_deals, memory_file, log_level, dnn_weights, dashboard_port, api_port):
+        d = {
+            "OPENAI_API_KEY": openai_key or "",
+            "ANTHROPIC_API_KEY": anthropic_key or "",
+            "PUSHOVER_USER": pushover_user or "",
+            "PUSHOVER_TOKEN": pushover_token or "",
+            "MODAL_TOKEN_ID": modal_id or "",
+            "MODAL_TOKEN_SECRET": modal_secret or "",
+            "DEAL_THRESHOLD": float(deal_threshold),
+            "SCAN_INTERVAL_MINUTES": int(scan_interval),
+            "SCANNER_MODEL": scanner_model,
+            "FRONTIER_MODEL": frontier_model,
+            "MESSAGING_MODEL": messaging_model,
+            "ENSEMBLE_WEIGHTS": ens_weights,
+            "CHROMA_DB_PATH": chroma_path,
+            "EMBEDDING_MODEL": embed_model,
+            "CHROMA_RESULTS": int(chroma_results),
+            "RAG_MAX_POINTS": int(rag_max_points),
+            "PUSHOVER_SOUND": notif_sound,
+            "NOTIFICATION_TITLE": notif_title,
+            "NOTIF_MIN_INTERVAL": int(notif_min_interval),
+            "RSS_FEEDS": rss_feeds,
+            "MAX_DEALS_PER_SCAN": int(max_deals),
+            "MEMORY_FILE": memory_file,
+            "LOG_LEVEL": log_level,
+            "DNN_WEIGHTS_PATH": dnn_weights,
+            "DASHBOARD_PORT": int(dashboard_port),
+            "API_PORT": int(api_port),
+        }
         try:
-            with open(".env", "w") as f:
-                f.write("\n".join(lines))
-            return gr.update(value="✅ Settings saved and applied successfully!", visible=True)
+            # 1. Persist to ui_settings.json (survives tab switches & page refreshes)
+            with open(SETTINGS_JSON_PATH, "w") as f:
+                json.dump(d, f, indent=2)
+            # 2. Write .env so agents pick up changes on next restart
+            _write_env(d)
+            return gr.update(value="✅ Settings saved to disk and .env updated. Restart services to apply agent changes.", visible=True)
         except Exception as e:
             return gr.update(value=f"❌ Error saving settings: {e}", visible=True)
 
-    def validate_settings(openai_key, anthropic_key, *args):
+    def load_saved_settings():
+        """Called on page load — returns all 26 component values from persisted JSON."""
+        d = _load_persisted()
+        return (
+            d["OPENAI_API_KEY"],
+            d["ANTHROPIC_API_KEY"],
+            d["PUSHOVER_USER"],
+            d["PUSHOVER_TOKEN"],
+            d["MODAL_TOKEN_ID"],
+            d["MODAL_TOKEN_SECRET"],
+            float(d["DEAL_THRESHOLD"]),
+            int(d["SCAN_INTERVAL_MINUTES"]),
+            d["SCANNER_MODEL"],
+            d["FRONTIER_MODEL"],
+            d["MESSAGING_MODEL"],
+            d["ENSEMBLE_WEIGHTS"],
+            d["CHROMA_DB_PATH"],
+            d["EMBEDDING_MODEL"],
+            int(d["CHROMA_RESULTS"]),
+            int(d["RAG_MAX_POINTS"]),
+            d["PUSHOVER_SOUND"],
+            d["NOTIFICATION_TITLE"],
+            int(d["NOTIF_MIN_INTERVAL"]),
+            d["RSS_FEEDS"],
+            int(d["MAX_DEALS_PER_SCAN"]),
+            d["MEMORY_FILE"],
+            d["LOG_LEVEL"],
+            d["DNN_WEIGHTS_PATH"],
+            int(d["DASHBOARD_PORT"]),
+            int(d["API_PORT"]),
+        )
+
+    def validate_settings(openai_key, anthropic_key, pushover_user, pushover_token, modal_id, *args):
         msgs = []
-        if openai_key and openai_key.startswith("sk-"):
-            msgs.append("✅ OpenAI key format valid")
-        else:
-            msgs.append("⚠️ OpenAI key missing or invalid format")
-        if anthropic_key and anthropic_key.startswith("sk-ant-"):
-            msgs.append("✅ Anthropic key format valid")
-        else:
-            msgs.append("⚠️ Anthropic key missing or invalid format")
+        msgs.append("✅ OpenAI key format valid" if openai_key and openai_key.startswith("sk-") else "⚠️ OpenAI key missing or invalid format")
+        msgs.append("✅ Anthropic key format valid" if anthropic_key and anthropic_key.startswith("sk-ant-") else "⚠️ Anthropic key missing or invalid format")
+        msgs.append("✅ Pushover user key provided" if pushover_user else "⚠️ Pushover user key missing")
+        msgs.append("✅ Pushover token provided" if pushover_token else "⚠️ Pushover token missing")
+        msgs.append("✅ Modal token ID provided" if modal_id else "ℹ️ Modal token not set (optional — disables Specialist Agent)")
         return gr.update(value="\n".join(msgs), visible=True)
 
     def reset_settings():
+        d = DEFAULTS
         return (
-            "", "", "", "", "", "",
-            50.0, 5, "gpt-4o-mini", "gpt-4o", "claude-3-5-sonnet-20241022",
-            "0.8, 0.1, 0.1", "./data/products_vectorstore", "sentence-transformers/all-MiniLM-L6-v2",
-            "https://www.dealnews.com/rss.html\nhttps://feeds.feedburner.com/techbargains", 50,
-            gr.update(value="🔄 Settings reset to defaults.", visible=True)
+            d["OPENAI_API_KEY"], d["ANTHROPIC_API_KEY"], d["PUSHOVER_USER"], d["PUSHOVER_TOKEN"],
+            d["MODAL_TOKEN_ID"], d["MODAL_TOKEN_SECRET"],
+            float(d["DEAL_THRESHOLD"]), int(d["SCAN_INTERVAL_MINUTES"]),
+            d["SCANNER_MODEL"], d["FRONTIER_MODEL"], d["MESSAGING_MODEL"],
+            d["ENSEMBLE_WEIGHTS"], d["CHROMA_DB_PATH"], d["EMBEDDING_MODEL"],
+            int(d["CHROMA_RESULTS"]), int(d["RAG_MAX_POINTS"]),
+            d["PUSHOVER_SOUND"], d["NOTIFICATION_TITLE"], int(d["NOTIF_MIN_INTERVAL"]),
+            d["RSS_FEEDS"], int(d["MAX_DEALS_PER_SCAN"]),
+            d["MEMORY_FILE"], d["LOG_LEVEL"], d["DNN_WEIGHTS_PATH"],
+            int(d["DASHBOARD_PORT"]), int(d["API_PORT"]),
+            gr.update(value="🔄 Settings reset to defaults. Click Save & Apply to persist.", visible=True)
         )
 
-    def export_settings(openai_key, anthropic_key, *args):
-        export = {
-            "OPENAI_API_KEY": "sk-***REDACTED***" if openai_key else "",
-            "ANTHROPIC_API_KEY": "sk-ant-***REDACTED***" if anthropic_key else "",
-            "DEAL_THRESHOLD": args[0] if args else 50,
-            "SCAN_INTERVAL_MINUTES": args[1] if len(args) > 1 else 5,
+    def export_settings(openai_key, anthropic_key, pushover_user, pushover_token, modal_id, modal_secret,
+                        deal_threshold, scan_interval, scanner_model, frontier_model, messaging_model,
+                        ens_weights, chroma_path, embed_model, chroma_results, rag_max_points,
+                        notif_sound, notif_title, notif_min_interval,
+                        rss_feeds, max_deals, memory_file, log_level, dnn_weights, dashboard_port, api_port):
+        """Write settings_export.json (secrets redacted) and show CLI instructions."""
+        export_data = {
+            "_comment": "Exported from The Price Is Right AI — secrets are REDACTED. Fill them in before importing.",
+            "_exported_at": datetime.now().isoformat(),
+            "OPENAI_API_KEY": "sk-REPLACE_ME" if openai_key else "",
+            "ANTHROPIC_API_KEY": "sk-ant-REPLACE_ME" if anthropic_key else "",
+            "PUSHOVER_USER": "REPLACE_ME" if pushover_user else "",
+            "PUSHOVER_TOKEN": "REPLACE_ME" if pushover_token else "",
+            "MODAL_TOKEN_ID": "REPLACE_ME" if modal_id else "",
+            "MODAL_TOKEN_SECRET": "REPLACE_ME" if modal_secret else "",
+            "DEAL_THRESHOLD": float(deal_threshold),
+            "SCAN_INTERVAL_MINUTES": int(scan_interval),
+            "SCANNER_MODEL": scanner_model,
+            "FRONTIER_MODEL": frontier_model,
+            "MESSAGING_MODEL": messaging_model,
+            "ENSEMBLE_WEIGHTS": ens_weights,
+            "CHROMA_DB_PATH": chroma_path,
+            "EMBEDDING_MODEL": embed_model,
+            "CHROMA_RESULTS": int(chroma_results),
+            "RAG_MAX_POINTS": int(rag_max_points),
+            "PUSHOVER_SOUND": notif_sound,
+            "NOTIFICATION_TITLE": notif_title,
+            "NOTIF_MIN_INTERVAL": int(notif_min_interval),
+            "RSS_FEEDS": rss_feeds,
+            "MAX_DEALS_PER_SCAN": int(max_deals),
+            "MEMORY_FILE": memory_file,
+            "LOG_LEVEL": log_level,
+            "DNN_WEIGHTS_PATH": dnn_weights,
+            "DASHBOARD_PORT": int(dashboard_port),
+            "API_PORT": int(api_port),
         }
-        return gr.update(value=json.dumps(export, indent=2), visible=True)
+        try:
+            os.makedirs(os.path.dirname(EXPORT_JSON_PATH), exist_ok=True)
+            with open(EXPORT_JSON_PATH, "w") as f:
+                json.dump(export_data, f, indent=2)
+            export_path_display = EXPORT_JSON_PATH
+        except Exception as ex:
+            export_path_display = f"(could not write file: {ex})"
+
+        cli_instructions = f"""# Settings exported to: {export_path_display}
+# Fill in REPLACE_ME values with your real secrets, then import:
+
+# === Linux / macOS / WSL ===
+./manage.sh import-settings data/settings_export.json
+
+# === Windows PowerShell ===
+.\\manage.ps1 import-settings data\\settings_export.json
+
+# === Manual .env update ===
+# Copy data/settings_export.json to a text editor, fill in secrets,
+# then run: ./manage.sh patch
+
+# === JSON content preview ===
+{json.dumps(export_data, indent=2)}"""
+        return gr.update(value=cli_instructions, visible=True)
 
     # ─── Build Gradio UI ─────────────────────────────────────────────────────
     with gr.Blocks(
@@ -1368,7 +1556,23 @@ def create_dashboard():
         </style>
         """)
 
-        # ── Event Wiring ──────────────────────────────────────────────────────
+        # ── All 26 settings inputs/outputs (shared across handlers) ───────────────────
+        ALL_SETTINGS_INPUTS = [
+            openai_key, anthropic_key, pushover_user, pushover_token, modal_id, modal_secret,
+            deal_threshold, scan_interval, scanner_model, frontier_model, messaging_model,
+            ens_weights, chroma_path, embed_model, chroma_results, rag_max_points,
+            notif_sound, notif_title, notif_min_interval,
+            rss_feeds, max_deals, memory_file, log_level, dnn_weights, dashboard_port, api_port
+        ]
+        ALL_SETTINGS_OUTPUTS = [
+            openai_key, anthropic_key, pushover_user, pushover_token, modal_id, modal_secret,
+            deal_threshold, scan_interval, scanner_model, frontier_model, messaging_model,
+            ens_weights, chroma_path, embed_model, chroma_results, rag_max_points,
+            notif_sound, notif_title, notif_min_interval,
+            rss_feeds, max_deals, memory_file, log_level, dnn_weights, dashboard_port, api_port
+        ]
+
+        # ── Event Wiring ────────────────────────────────────────────────────────────────
         scan_btn.click(
             fn=do_scan,
             outputs=[agent_status_html, deals_html, logs_html]
@@ -1384,39 +1588,48 @@ def create_dashboard():
             outputs=[rag_html]
         )
 
-        save_btn.click(
-            fn=save_settings,
-            inputs=[openai_key, anthropic_key, pushover_user, pushover_token, modal_id, modal_secret,
-                    deal_threshold, scan_interval, scanner_model, frontier_model, messaging_model,
-                    ens_weights, chroma_path, embed_model, rss_feeds, max_deals],
-            outputs=[settings_msg]
-        ).then(lambda: gr.update(visible=True), outputs=[settings_msg])
-
-        validate_btn.click(
-            fn=validate_settings,
-            inputs=[openai_key, anthropic_key],
-            outputs=[settings_msg]
-        ).then(lambda: gr.update(visible=True), outputs=[settings_msg])
-
-        reset_btn.click(
-            fn=reset_settings,
-            outputs=[openai_key, anthropic_key, pushover_user, pushover_token, modal_id, modal_secret,
-                     deal_threshold, scan_interval, scanner_model, frontier_model, messaging_model,
-                     ens_weights, chroma_path, embed_model, rss_feeds, max_deals, settings_msg]
+        # ── PERSISTENCE: reload saved settings on every page load ────────────────────
+        # This fires automatically when the browser opens/refreshes the page.
+        app.load(
+            fn=load_saved_settings,
+            inputs=None,
+            outputs=ALL_SETTINGS_OUTPUTS
         )
 
+        # ── Save & Apply ─────────────────────────────────────────────────────────────
+        save_btn.click(
+            fn=save_settings,
+            inputs=ALL_SETTINGS_INPUTS,
+            outputs=[settings_msg]
+        ).then(lambda: gr.update(visible=True), outputs=[settings_msg])
+
+        # ── Validate Only ───────────────────────────────────────────────────────────
+        validate_btn.click(
+            fn=validate_settings,
+            inputs=[openai_key, anthropic_key, pushover_user, pushover_token, modal_id],
+            outputs=[settings_msg]
+        ).then(lambda: gr.update(visible=True), outputs=[settings_msg])
+
+        # ── Reset to Defaults ─────────────────────────────────────────────────────────
+        reset_btn.click(
+            fn=reset_settings,
+            outputs=ALL_SETTINGS_OUTPUTS + [settings_msg]
+        )
+
+        # ── Export Settings ──────────────────────────────────────────────────────────
         export_btn.click(
             fn=export_settings,
-            inputs=[openai_key, anthropic_key, deal_threshold, scan_interval],
+            inputs=ALL_SETTINGS_INPUTS,
             outputs=[export_output]
         ).then(lambda: gr.update(visible=True), outputs=[export_output])
 
+        # ── API Key Test Buttons ─────────────────────────────────────────────────────
         test_openai_btn.click(
-            fn=lambda k: "✅ Format OK" if k.startswith("sk-") else "⚠️ Invalid format",
+            fn=lambda k: "✅ Format OK (sk-...)" if k and k.startswith("sk-") else "⚠️ Invalid format",
             inputs=[openai_key], outputs=[openai_status]
         )
         test_anthropic_btn.click(
-            fn=lambda k: "✅ Format OK" if k.startswith("sk-ant-") else "⚠️ Invalid format",
+            fn=lambda k: "✅ Format OK (sk-ant-...)" if k and k.startswith("sk-ant-") else "⚠️ Invalid format",
             inputs=[anthropic_key], outputs=[anthropic_status]
         )
         test_pushover_btn.click(
@@ -1424,7 +1637,7 @@ def create_dashboard():
             inputs=[pushover_user], outputs=[pushover_status]
         )
         test_modal_btn.click(
-            fn=lambda k: "✅ Token provided" if k else "⚠️ Token missing",
+            fn=lambda k: "✅ Token provided" if k else "⚠️ Token missing (optional)",
             inputs=[modal_id], outputs=[modal_status]
         )
 
