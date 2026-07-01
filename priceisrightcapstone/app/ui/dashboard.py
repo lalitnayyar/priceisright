@@ -1405,132 +1405,161 @@ def create_dashboard():
                     )
 
             # ════════════════════════════════════════════════════════════════
-            # TAB 2 — SETTINGS
+            # TAB 2 — SETTINGS (PURE HTML + JS FETCH)
             # ════════════════════════════════════════════════════════════════
             with gr.Tab("⚙️ Settings", id="tab-settings"):
-                gr.Markdown("""
-                ## System Configuration
-                Manage your agent parameters, database connections, and external API integrations.
+                gr.HTML("""
+                <style>
+                    .pir-settings-form { padding: 20px; font-family: 'Hanken Grotesk', sans-serif; color: #f7ddd5; }
+                    .pir-settings-form h2 { color: #ffb59d; border-bottom: 1px solid #594139; padding-bottom: 10px; margin-bottom: 20px; }
+                    .pir-group { background: #2a1c18; border: 1px solid #594139; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+                    .pir-group h3 { margin-top: 0; color: #e1bfb5; }
+                    .pir-row { display: flex; gap: 20px; margin-bottom: 15px; }
+                    .pir-field { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+                    .pir-field label { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #e1bfb5; text-transform: uppercase; }
+                    .pir-field input, .pir-field select, .pir-field textarea {
+                        background: #1a0a00; border: 1px solid #594139; color: #f7ddd5 !important;
+                        padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 14px; width: 100%; box-sizing: border-box;
+                    }
+                    .pir-field input:focus, .pir-field select:focus, .pir-field textarea:focus { border-color: #ffb59d; outline: none; }
+                    .pir-btn-primary { background: #ffb59d; color: #5d1900; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 20px; }
+                    .pir-btn-primary:hover { background: #ffc9b8; }
+                    #pir-status-msg { margin-top: 15px; padding: 10px; border-radius: 6px; display: none; font-weight: bold; }
+                    .pir-success { background: #1b3a28; color: #4ECDC4; border: 1px solid #2a5a3f; }
+                    .pir-error { background: #3a1b1b; color: #ff6b35; border: 1px solid #5a2a2a; }
+                </style>
+
+                <div class="pir-settings-form">
+                    <h2>System Configuration</h2>
+                    <p style="color: #e1bfb5; margin-bottom: 30px;">Manage your agent parameters, database connections, and external API integrations. Changes apply immediately to all agents.</p>
+
+                    <form id="pir-settings-form-element" onsubmit="event.preventDefault(); savePirSettings();">
+                        <div class="pir-group">
+                            <h3>🔑 API Keys</h3>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>OPENAI API KEY</label><input type="password" id="OPENAI_API_KEY" placeholder="sk-..."></div>
+                                <div class="pir-field"><label>ANTHROPIC API KEY</label><input type="password" id="ANTHROPIC_API_KEY" placeholder="sk-ant-..."></div>
+                            </div>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>PUSHOVER USER KEY</label><input type="password" id="PUSHOVER_USER" placeholder="User Key"></div>
+                                <div class="pir-field"><label>PUSHOVER APP TOKEN</label><input type="password" id="PUSHOVER_TOKEN" placeholder="App Token"></div>
+                            </div>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>MODAL TOKEN ID</label><input type="password" id="MODAL_TOKEN_ID" placeholder="ak-..."></div>
+                                <div class="pir-field"><label>MODAL TOKEN SECRET</label><input type="password" id="MODAL_TOKEN_SECRET" placeholder="..."></div>
+                            </div>
+                        </div>
+
+                        <div class="pir-group">
+                            <h3>🤖 Agent Configuration</h3>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>DEAL THRESHOLD (%)</label><input type="number" id="DEAL_THRESHOLD_PCT" min="1" max="90"></div>
+                                <div class="pir-field"><label>SCAN INTERVAL (MIN)</label><input type="number" id="SCAN_INTERVAL_MINUTES" min="1" max="60"></div>
+                            </div>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>SCANNER MODEL</label><select id="SCANNER_MODEL"><option>gpt-4o-mini</option><option>gpt-4o</option><option>gpt-3.5-turbo</option></select></div>
+                                <div class="pir-field"><label>FRONTIER MODEL</label><select id="FRONTIER_MODEL"><option>gpt-4o</option><option>gpt-4o-mini</option><option>gpt-4-turbo</option></select></div>
+                                <div class="pir-field"><label>MESSAGING MODEL</label><select id="MESSAGING_MODEL"><option>claude-3-5-sonnet-20241022</option><option>claude-3-opus-20240229</option><option>claude-3-haiku-20240307</option></select></div>
+                            </div>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>ENSEMBLE WEIGHTS</label><input type="text" id="ENSEMBLE_WEIGHTS"></div>
+                            </div>
+                        </div>
+
+                        <div class="pir-group">
+                            <h3>🧠 RAG & Feeds</h3>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>CHROMADB PATH</label><input type="text" id="CHROMADB_STORAGE_PATH"></div>
+                                <div class="pir-field"><label>EMBEDDING MODEL</label><select id="EMBEDDING_MODEL"><option>sentence-transformers/all-MiniLM-L6-v2</option><option>text-embedding-3-small</option></select></div>
+                            </div>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>FEED SOURCES (ONE PER LINE)</label><textarea id="RSS_FEEDS" rows="4"></textarea></div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="pir-btn-primary">💾 Save & Apply</button>
+                        <div id="pir-status-msg"></div>
+                    </form>
+                </div>
+
+                <script>
+                    const API_BASE = window.location.protocol + "//" + window.location.hostname + ":8001";
+                    const FIELDS = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PUSHOVER_USER", "PUSHOVER_TOKEN", "MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET", "DEAL_THRESHOLD_PCT", "SCAN_INTERVAL_MINUTES", "SCANNER_MODEL", "FRONTIER_MODEL", "MESSAGING_MODEL", "ENSEMBLE_WEIGHTS", "CHROMADB_STORAGE_PATH", "EMBEDDING_MODEL", "RSS_FEEDS"];
+
+                    async function loadPirSettings() {
+                        try {
+                            const res = await fetch(API_BASE + "/settings");
+                            if (res.ok) {
+                                const data = await res.json();
+                                FIELDS.forEach(f => {
+                                    const el = document.getElementById(f);
+                                    if (el && data[f] !== undefined) {
+                                        if (f === "RSS_FEEDS" && Array.isArray(data[f])) {
+                                            el.value = data[f].join("\\n");
+                                        } else {
+                                            el.value = data[f];
+                                        }
+                                    }
+                                });
+                            }
+                        } catch (e) {
+                            console.error("Failed to load settings:", e);
+                        }
+                    }
+
+                    async function savePirSettings() {
+                        const btn = document.querySelector('.pir-btn-primary');
+                        const msg = document.getElementById('pir-status-msg');
+                        btn.textContent = "💾 Saving...";
+                        
+                        const data = {};
+                        FIELDS.forEach(f => {
+                            const val = document.getElementById(f).value;
+                            if (f === "DEAL_THRESHOLD_PCT" || f === "SCAN_INTERVAL_MINUTES") {
+                                data[f] = parseInt(val, 10);
+                            } else if (f === "RSS_FEEDS") {
+                                data[f] = val.split("\\n").filter(line => line.trim() !== "");
+                            } else {
+                                data[f] = val;
+                            }
+                        });
+
+                        try {
+                            const res = await fetch(API_BASE + "/settings", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(data)
+                            });
+                            if (res.ok) {
+                                msg.textContent = "✅ Settings saved successfully! Agents will use new values immediately.";
+                                msg.className = "pir-success";
+                                msg.style.display = "block";
+                                setTimeout(() => msg.style.display = "none", 5000);
+                            } else {
+                                throw new Error("Server returned " + res.status);
+                            }
+                        } catch (e) {
+                            msg.textContent = "❌ Failed to save settings: " + e.message;
+                            msg.className = "pir-error";
+                            msg.style.display = "block";
+                        } finally {
+                            btn.textContent = "💾 Save & Apply";
+                        }
+                    }
+
+                    // Load immediately and also when tab becomes visible
+                    document.addEventListener("DOMContentLoaded", loadPirSettings);
+                    setInterval(() => {
+                        const tab = document.getElementById("tab-settings");
+                        if (tab && tab.style.display !== "none" && !tab.dataset.loaded) {
+                            loadPirSettings();
+                            tab.dataset.loaded = "true";
+                        } else if (tab && tab.style.display === "none") {
+                            tab.dataset.loaded = "";
+                        }
+                    }, 500);
+                </script>
                 """)
-
-                # Section 1: API Keys
-                with gr.Accordion("🔑 API Keys", open=False):
-                    with gr.Row():
-                        with gr.Column():
-                            openai_key = gr.Textbox(label="OPENAI API KEY", placeholder="sk-...", type="password", elem_classes=["pir-input"])
-                            with gr.Row():
-                                test_openai_btn = gr.Button("Test OpenAI", size="sm", variant="secondary")
-                                openai_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3, elem_classes=["pir-status"])
-                        with gr.Column():
-                            anthropic_key = gr.Textbox(label="ANTHROPIC API KEY", placeholder="sk-ant-...", type="password", elem_classes=["pir-input"])
-                            with gr.Row():
-                                test_anthropic_btn = gr.Button("Test Anthropic", size="sm", variant="secondary")
-                                anthropic_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3, elem_classes=["pir-status"])
-                    with gr.Row():
-                        with gr.Column():
-                            pushover_user = gr.Textbox(label="PUSHOVER USER KEY", placeholder="User Key", type="password", elem_classes=["pir-input"])
-                            with gr.Row():
-                                test_pushover_btn = gr.Button("Test Pushover", size="sm", variant="secondary")
-                                pushover_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3, elem_classes=["pir-status"])
-                        with gr.Column():
-                            pushover_token = gr.Textbox(label="PUSHOVER APP TOKEN", placeholder="App Token", type="password", elem_classes=["pir-input"])
-                    with gr.Row():
-                        with gr.Column():
-                            modal_id = gr.Textbox(label="MODAL TOKEN ID", placeholder="ak-...", type="password", elem_classes=["pir-input"])
-                        with gr.Column():
-                            modal_secret = gr.Textbox(label="MODAL TOKEN SECRET", placeholder="...", type="password", elem_classes=["pir-input"])
-                            with gr.Row():
-                                test_modal_btn = gr.Button("Test Modal", size="sm", variant="secondary")
-                                modal_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3, elem_classes=["pir-status"])
-
-                # Section 2: Agent Configuration
-                with gr.Accordion("🤖 Agent Configuration", open=True):
-                    with gr.Row():
-                        deal_threshold = gr.Slider(label="DEAL THRESHOLD (%)", minimum=1, maximum=90, value=50, step=1, elem_classes=["pir-slider"])
-                        scan_interval = gr.Slider(label="SCAN INTERVAL (MIN)", minimum=1, maximum=60, value=5, step=1, elem_classes=["pir-slider"])
-                    with gr.Row():
-                        scanner_model = gr.Dropdown(
-                            label="SCANNER MODEL",
-                            choices=["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
-                            value="gpt-4o-mini",
-                            elem_classes=["pir-dropdown"]
-                        )
-                        frontier_model = gr.Dropdown(
-                            label="FRONTIER MODEL",
-                            choices=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"],
-                            value="gpt-4o",
-                            elem_classes=["pir-dropdown"]
-                        )
-                        messaging_model = gr.Dropdown(
-                            label="MESSAGING MODEL",
-                            choices=["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-haiku-20240307"],
-                            value="claude-3-5-sonnet-20241022",
-                            elem_classes=["pir-dropdown"]
-                        )
-                    ens_weights = gr.Textbox(
-                        label="ENSEMBLE WEIGHTS (FRONTIER, SPECIALIST, DNN — MUST SUM TO 1.0)",
-                        value="0.8, 0.1, 0.1",
-                        placeholder="0.8, 0.1, 0.1",
-                        elem_classes=["pir-input"]
-                    )
-
-                # Section 3: RAG Database
-                with gr.Accordion("🧠 RAG Database", open=False):
-                    with gr.Row():
-                        chroma_path = gr.Textbox(label="CHROMADB STORAGE PATH", value="./data/products_vectorstore", elem_classes=["pir-input"])
-                        embed_model = gr.Dropdown(
-                            label="EMBEDDING MODEL",
-                            choices=["sentence-transformers/all-MiniLM-L6-v2", "text-embedding-3-small", "text-embedding-ada-002"],
-                            value="sentence-transformers/all-MiniLM-L6-v2",
-                            elem_classes=["pir-dropdown"]
-                        )
-                    with gr.Row():
-                        chroma_results = gr.Slider(label="RAG RESULTS COUNT", minimum=1, maximum=20, value=5, step=1, elem_classes=["pir-slider"])
-                        rag_max_points = gr.Slider(label="VISUALISATION MAX POINTS", minimum=100, maximum=5000, value=1000, step=100, elem_classes=["pir-slider"])
-
-                # Section 4: Notifications
-                with gr.Accordion("🔔 Notifications", open=False):
-                    with gr.Row():
-                        notif_sound = gr.Dropdown(
-                            label="PUSHOVER SOUND",
-                            choices=["pushover", "bike", "bugle", "cashregister", "classical", "cosmic", "falling", "gamelan", "incoming", "intermission", "magic", "mechanical", "pianobar", "siren", "spacealarm", "tugboat", "alien", "climb", "persistent", "echo", "updown"],
-                            value="pushover",
-                            elem_classes=["pir-dropdown"]
-                        )
-                        notif_title = gr.Textbox(label="NOTIFICATION TITLE", value="The Price Is Right Alert", elem_classes=["pir-input"])
-                    notif_min_interval = gr.Slider(label="MIN INTERVAL BETWEEN NOTIFICATIONS (MIN)", minimum=1, maximum=60, value=5, step=1, elem_classes=["pir-slider"])
-
-                # Section 5: RSS Feeds
-                with gr.Accordion("📡 RSS Feeds", open=True):
-                    rss_feeds = gr.Textbox(
-                        label="FEED SOURCES (ONE PER LINE)",
-                        value="https://www.dealnews.com/rss.html\nhttps://feeds.feedburner.com/techbargains\nhttps://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1",
-                        lines=5,
-                        placeholder="https://...",
-                        elem_classes=["pir-input"]
-                    )
-                    max_deals = gr.Slider(label="MAX DEALS PER SCAN", minimum=1, maximum=200, value=50, step=1, elem_classes=["pir-slider"])
-
-                # Section 6: Advanced
-                with gr.Accordion("⚙️ Advanced", open=False):
-                    with gr.Row():
-                        memory_file = gr.Textbox(label="MEMORY FILE PATH", value="./data/memory.json", elem_classes=["pir-input"])
-                        log_level = gr.Dropdown(label="LOG LEVEL", choices=["DEBUG", "INFO", "WARNING", "ERROR"], value="INFO", elem_classes=["pir-dropdown"])
-                    with gr.Row():
-                        dnn_weights = gr.Textbox(label="DNN WEIGHTS PATH", value="./data/dnn_weights.pt", elem_classes=["pir-input"])
-                        dashboard_port = gr.Number(label="DASHBOARD PORT", value=7860, elem_classes=["pir-number"])
-                    api_port = gr.Number(label="API PORT", value=8000, elem_classes=["pir-number"])
-
-                # ── Settings Action Buttons ──────────────────────────────────────────────
-                gr.HTML('<div style="height:16px"></div>')
-                with gr.Row():
-                    reset_btn = gr.Button("🔄 Reset to Defaults", variant="secondary")
-                    validate_btn = gr.Button("✅ Validate Only", variant="secondary")
-                    export_btn = gr.Button("📤 Export Settings", variant="secondary")
-                save_btn = gr.Button("💾 Save & Apply", variant="primary", size="lg")
-
-                settings_msg = gr.Textbox(label="STATUS", interactive=False, visible=False, elem_classes=["pir-status"])
-                export_output = gr.Code(label=".env Preview / Export", language="shell", visible=False)
 
         # ── Mobile Bottom Nav ─────────────────────────────────────────────────
         gr.HTML("""
@@ -1552,22 +1581,6 @@ def create_dashboard():
         </style>
         """)
 
-        # ── All 26 settings inputs/outputs (shared across handlers) ───────────────────
-        ALL_SETTINGS_INPUTS = [
-            openai_key, anthropic_key, pushover_user, pushover_token, modal_id, modal_secret,
-            deal_threshold, scan_interval, scanner_model, frontier_model, messaging_model,
-            ens_weights, chroma_path, embed_model, chroma_results, rag_max_points,
-            notif_sound, notif_title, notif_min_interval,
-            rss_feeds, max_deals, memory_file, log_level, dnn_weights, dashboard_port, api_port
-        ]
-        ALL_SETTINGS_OUTPUTS = [
-            openai_key, anthropic_key, pushover_user, pushover_token, modal_id, modal_secret,
-            deal_threshold, scan_interval, scanner_model, frontier_model, messaging_model,
-            ens_weights, chroma_path, embed_model, chroma_results, rag_max_points,
-            notif_sound, notif_title, notif_min_interval,
-            rss_feeds, max_deals, memory_file, log_level, dnn_weights, dashboard_port, api_port
-        ]
-
         # ── Event Wiring ────────────────────────────────────────────────────────────────
         scan_btn.click(
             fn=do_scan,
@@ -1582,59 +1595,6 @@ def create_dashboard():
         refresh_rag_btn.click(
             fn=lambda: gr.update(value=build_rag_html(state["rag_stats"])),
             outputs=[rag_html]
-        )
-
-        # ── PERSISTENCE: reload saved settings on every page load ────────────────────
-        # This fires automatically when the browser opens/refreshes the page.
-        app.load(
-            fn=load_saved_settings,
-            inputs=None,
-            outputs=ALL_SETTINGS_OUTPUTS
-        )
-
-        # ── Save & Apply ─────────────────────────────────────────────────────────────
-        save_btn.click(
-            fn=save_settings,
-            inputs=ALL_SETTINGS_INPUTS,
-            outputs=[settings_msg]
-        ).then(lambda: gr.update(visible=True), outputs=[settings_msg])
-
-        # ── Validate Only ───────────────────────────────────────────────────────────
-        validate_btn.click(
-            fn=validate_settings,
-            inputs=[openai_key, anthropic_key, pushover_user, pushover_token, modal_id],
-            outputs=[settings_msg]
-        ).then(lambda: gr.update(visible=True), outputs=[settings_msg])
-
-        # ── Reset to Defaults ─────────────────────────────────────────────────────────
-        reset_btn.click(
-            fn=reset_settings,
-            outputs=ALL_SETTINGS_OUTPUTS + [settings_msg]
-        )
-
-        # ── Export Settings ──────────────────────────────────────────────────────────
-        export_btn.click(
-            fn=export_settings,
-            inputs=ALL_SETTINGS_INPUTS,
-            outputs=[export_output]
-        ).then(lambda: gr.update(visible=True), outputs=[export_output])
-
-        # ── API Key Test Buttons ─────────────────────────────────────────────────────
-        test_openai_btn.click(
-            fn=lambda k: "✅ Format OK (sk-...)" if k and k.startswith("sk-") else "⚠️ Invalid format",
-            inputs=[openai_key], outputs=[openai_status]
-        )
-        test_anthropic_btn.click(
-            fn=lambda k: "✅ Format OK (sk-ant-...)" if k and k.startswith("sk-ant-") else "⚠️ Invalid format",
-            inputs=[anthropic_key], outputs=[anthropic_status]
-        )
-        test_pushover_btn.click(
-            fn=lambda k: "✅ Key provided" if k else "⚠️ Key missing",
-            inputs=[pushover_user], outputs=[pushover_status]
-        )
-        test_modal_btn.click(
-            fn=lambda k: "✅ Token provided" if k else "⚠️ Token missing (optional)",
-            inputs=[modal_id], outputs=[modal_status]
         )
 
     return app

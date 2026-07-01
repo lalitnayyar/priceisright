@@ -1,6 +1,7 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi import Request
 from typing import List
 from app.agents.planning import PlanningAgent
 from app.core.models import DealResult, AgentStatus
@@ -25,6 +26,22 @@ class ScanResponse(BaseModel):
 @app.get("/")
 def read_root():
     return {"status": "online", "version": "1.2.0", "app": "The Price Is Right"}
+
+@app.get("/settings")
+def get_ui_settings():
+    from app.core.settings_store import SettingsStore
+    from app.ui.dashboard import DEFAULTS
+    saved = SettingsStore.read()
+    return {**DEFAULTS, **saved}
+
+@app.post("/settings")
+async def save_ui_settings(request: Request):
+    data = await request.json()
+    from app.core.settings_store import SettingsStore
+    from app.ui.dashboard import _write_env
+    SettingsStore.write(data)
+    _write_env(data)
+    return {"status": "success"}
 
 @app.post("/scan", response_model=ScanResponse)
 def trigger_scan(background_tasks: BackgroundTasks):

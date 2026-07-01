@@ -59,7 +59,7 @@ def get_settings() -> Settings:
             if "MODAL_TOKEN_ID" in ui_data: base_settings.MODAL_TOKEN_ID = ui_data["MODAL_TOKEN_ID"]
             if "MODAL_TOKEN_SECRET" in ui_data: base_settings.MODAL_TOKEN_SECRET = ui_data["MODAL_TOKEN_SECRET"]
             
-            if "DEAL_THRESHOLD" in ui_data: base_settings.DEAL_THRESHOLD = float(ui_data["DEAL_THRESHOLD"])
+            if "DEAL_THRESHOLD_PCT" in ui_data: base_settings.DEAL_THRESHOLD = float(ui_data["DEAL_THRESHOLD_PCT"])
             if "SCAN_INTERVAL_MINUTES" in ui_data: base_settings.SCAN_INTERVAL_MINUTES = int(ui_data["SCAN_INTERVAL_MINUTES"])
             if "SCANNER_MODEL" in ui_data: base_settings.SCANNER_MODEL = ui_data["SCANNER_MODEL"]
             if "FRONTIER_MODEL" in ui_data: base_settings.FRONTIER_MODEL = ui_data["FRONTIER_MODEL"]
@@ -72,21 +72,17 @@ def get_settings() -> Settings:
                     base_settings.ENSEMBLE_SPECIALIST_WEIGHT = parts[1]
                     base_settings.ENSEMBLE_DNN_WEIGHT = parts[2]
             
-            if "CHROMA_DB_PATH" in ui_data: base_settings.CHROMA_DB_PATH = ui_data["CHROMA_DB_PATH"]
-            if "CHROMA_RESULTS" in ui_data: base_settings.CHROMA_RESULTS_COUNT = int(ui_data["CHROMA_RESULTS"])
+            if "CHROMADB_STORAGE_PATH" in ui_data: base_settings.CHROMA_DB_PATH = ui_data["CHROMADB_STORAGE_PATH"]
             if "EMBEDDING_MODEL" in ui_data: base_settings.EMBEDDING_MODEL = ui_data["EMBEDDING_MODEL"]
             
             if "RSS_FEEDS" in ui_data:
-                base_settings.RSS_FEED_URLS = ",".join(line.strip() for line in ui_data["RSS_FEEDS"].splitlines() if line.strip())
+                if isinstance(ui_data["RSS_FEEDS"], list):
+                    base_settings.RSS_FEED_URLS = ",".join(ui_data["RSS_FEEDS"])
+                else:
+                    base_settings.RSS_FEED_URLS = ",".join(line.strip() for line in ui_data["RSS_FEEDS"].splitlines() if line.strip())
                 
-            if "MEMORY_FILE" in ui_data: base_settings.MEMORY_FILE = ui_data["MEMORY_FILE"]
-            if "LOG_LEVEL" in ui_data: base_settings.LOG_LEVEL = ui_data["LOG_LEVEL"]
-            if "DASHBOARD_PORT" in ui_data: base_settings.DASHBOARD_PORT = int(ui_data["DASHBOARD_PORT"])
-            if "API_PORT" in ui_data: base_settings.API_PORT = int(ui_data["API_PORT"])
-            if "DNN_WEIGHTS_PATH" in ui_data: base_settings.DNN_WEIGHTS_PATH = ui_data["DNN_WEIGHTS_PATH"]
-            
         except Exception as e:
-            print(f"Warning: Failed to load dynamic settings from {settings_path}: {e}")
+            print(f"Warning: Failed to load dynamic settings: {e}")
             
     return base_settings
 
