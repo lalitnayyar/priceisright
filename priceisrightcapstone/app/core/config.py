@@ -44,8 +44,13 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Load settings dynamically from ui_settings.json if available, fallback to .env/defaults."""
     import json
-    settings_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "ui_settings.json")
-    settings_path = os.path.normpath(settings_path)
+    # In Docker, we are at /app, so data is at /app/data
+    # Locally, we might be running from the root
+    if os.path.exists("/app/data"):
+        settings_path = "/app/data/ui_settings.json"
+    else:
+        settings_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "ui_settings.json")
+        settings_path = os.path.normpath(settings_path)
     
     base_settings = Settings()
     

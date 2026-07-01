@@ -1001,7 +1001,7 @@ def create_dashboard():
             {"name": "Specialist", "role": "Fine-tuned Inference", "model": "Llama-3.2-3B", "status": "READY"},
             {"name": "Neural Network", "role": "DNN Inference", "model": "Local PyTorch", "status": "READY"},
             {"name": "Ensemble", "role": "Weighted Combiner", "model": "Heuristic", "status": "READY"},
-            {"name": "Messaging", "role": "Push Notifications", "model": settings.MESSAGING_MODEL, "status": "ERROR"},
+            {"name": "Messaging", "role": "Push Notifications", "model": settings.MESSAGING_MODEL, "status": "READY"},
             {"name": "Planning", "role": "Orchestration", "model": "GPT-4o", "status": "READY"},
         ],
         "rag_stats": {"vectors": 16842, "capacity_pct": 84, "storage_gb": 1.2, "memory_mb": 450, "dimensions": 384, "growth_pct": 12.4},
@@ -1032,12 +1032,17 @@ def create_dashboard():
         )
 
     # ── Persistence helpers ──────────────────────────────────────────────────
-    SETTINGS_JSON_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "ui_settings.json")
-    SETTINGS_JSON_PATH = os.path.normpath(SETTINGS_JSON_PATH)
-    EXPORT_JSON_PATH   = os.path.join(os.path.dirname(__file__), "..", "..", "data", "settings_export.json")
-    EXPORT_JSON_PATH   = os.path.normpath(EXPORT_JSON_PATH)
-    ENV_PATH           = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
-    ENV_PATH           = os.path.normpath(ENV_PATH)
+    if os.path.exists("/app/data"):
+        SETTINGS_JSON_PATH = "/app/data/ui_settings.json"
+        EXPORT_JSON_PATH   = "/app/data/settings_export.json"
+        ENV_PATH           = "/app/.env"
+    else:
+        SETTINGS_JSON_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "ui_settings.json")
+        SETTINGS_JSON_PATH = os.path.normpath(SETTINGS_JSON_PATH)
+        EXPORT_JSON_PATH   = os.path.join(os.path.dirname(__file__), "..", "..", "data", "settings_export.json")
+        EXPORT_JSON_PATH   = os.path.normpath(EXPORT_JSON_PATH)
+        ENV_PATH           = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+        ENV_PATH           = os.path.normpath(ENV_PATH)
 
     os.makedirs(os.path.dirname(SETTINGS_JSON_PATH), exist_ok=True)
 
