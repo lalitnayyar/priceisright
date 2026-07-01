@@ -4,7 +4,7 @@
 
 > **Author:** Lalit Nayyar | lalitnayyar@gmail.com | +971508320336 | +919595353336
 > **Repository:** https://github.com/lalitnayyar/priceisright.git
-> **Current Version:** v2.0.0
+> **Current Version:** v2.0.1
 
 ---
 
@@ -143,6 +143,7 @@ Use `manage.sh` (Linux/macOS/WSL2) or `manage.ps1` (Windows PowerShell) to contr
 | `status` | `./manage.sh status` | `.\manage.ps1 status` | Show current status of all Docker containers |
 | `logs` | `./manage.sh logs` | `.\manage.ps1 logs` | Stream logs from all services |
 | `diagnose` | `./manage.sh diagnose` | `.\manage.ps1 diagnose` | Check Docker, Compose, `.env` keys, and port availability |
+| `save-logs`| `./manage.sh save-logs`| *(Bash only)* | Export all container logs to a shareable `.txt` file |
 
 ---
 
@@ -322,6 +323,7 @@ git pull origin main
 | Check | Command |
 |-------|---------|
 | View live logs from all services | `./manage.sh logs` |
+| Export all logs to a shareable file | `./manage.sh save-logs` |
 | Run full diagnostics | `./manage.sh diagnose` |
 | Verify ChromaDB is healthy | `curl http://localhost:8000/api/v1/heartbeat` |
 | Verify API is responding | `curl http://localhost:7860/status` |
@@ -473,6 +475,29 @@ All `fetch()` calls now use `/settings`, `/status`, `/scan`, `/results` as relat
 
 ---
 
+### Issue 8 — `TypeError: Client.__init__() got an unexpected keyword argument 'proxies'`
+
+**Symptom:** Both the `app` and `api` containers crash immediately on startup. The logs show:
+```
+TypeError: Client.__init__() got an unexpected keyword argument 'proxies'
+```
+
+**Root Cause:** A breaking API change between `openai` and `httpx`. The `openai==1.3.7` SDK passes a `proxies` argument to `httpx.Client()`, but `httpx>=0.28.0` completely removed that parameter.
+
+**Fix Applied (v2.0.1):** Pinned compatible versions in `requirements.txt`:
+```text
+openai==1.14.3
+anthropic==0.18.1
+httpx==0.27.2
+```
+
+**To apply:** Because this is a Python dependency change, a full rebuild is required.
+```bash
+./manage.sh update
+```
+
+---
+
 ### Issue 7 — Agent Status table was hardcoded (static data)
 
 **Symptom:** The Agent Framework table in the Dashboard always showed the same static statuses regardless of whether agents were actually running or idle. The data was sourced from a hardcoded Python list in `state["agent_statuses"]` and never updated from the real backend.
@@ -550,6 +575,7 @@ Additional selectors were added for: read-only outputs, dropdowns, number inputs
 
 | Version | Commit | Date | Change |
 |---------|--------|------|--------|
+| v2.0.1 | `TBD` | 2026-07-01 | **fix:** Resolve `httpx`/`openai` proxy crash on startup; **feat:** Add `save-logs` command to `manage.sh` |
 | v2.0.0 | `e40b2ab` | 2026-07-01 | **fix:** Fully dynamic dashboard — Agent Status, Deals, Logs all driven by live JS polling; Settings CORS fixed; Scan button triggers real backend pipeline |
 | v1.9.0 | `fe54ea4` | 2026-07-01 | **feat:** Mount Gradio onto FastAPI via `gr.mount_gradio_app` — unified port 7860 for UI and API |
 | v1.5.0 | `be3b6bd` | 2026-07-01 | **fix:** Force bright text visibility on all Gradio input/output/status elements |

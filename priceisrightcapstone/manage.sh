@@ -140,6 +140,7 @@ show_main_menu() {
     echo -e "  ${BOLD}${CYAN}  7)${NC}  🧪  Test            — Run 118-test suite + generate report"
     echo -e "  ${BOLD}${CYAN}  8)${NC}  📋  Status          — Show container status"
     echo -e "  ${BOLD}${CYAN}  9)${NC}  📜  Logs            — Stream service logs"
+    echo -e "  ${BOLD}${CYAN} 13)${NC}  💾  Save Logs      — Export all logs to a shareable file"
     echo -e "  ${BOLD}${YELLOW}10)${NC}  🔍  Diagnose        — Pre-flight environment checks"
     echo -e "  ${BOLD}${YELLOW}11)${NC}  📥  Import Settings — Apply a settings.json file"
     echo -e "  ${BOLD}${MAGENTA}12)${NC}  ℹ️   About / Help    — Show full help and documentation"
@@ -147,7 +148,7 @@ show_main_menu() {
     echo -e "  ${BOLD}${RED} 0)${NC}  ❌  Exit"
     echo ""
     sep
-    echo -ne "  ${BOLD}${WHITE}Select option [0-12]: ${NC}"
+    echo -ne "  ${BOLD}${WHITE}Select option [0-13]: ${NC}"
 }
 
 # ── Sub-menus / parameter info ────────────────────────────────────────────────
@@ -436,6 +437,68 @@ info_logs() {
     fi
 }
 
+info_save_logs() {
+    clear
+    echo ""
+    echo -e "  ${BOLD}${CYAN}💾  SAVE LOGS — Export All Logs to a Shareable File${NC}"
+    sep
+    echo ""
+    echo -e "  ${BOLD}What it does:${NC}"
+    echo "    Captures the last 500 lines from every running service"
+    echo "    (app, api, chromadb, rag-init) and saves them to a single"
+    echo "    timestamped .txt file you can share for debugging."
+    echo ""
+    echo -e "  ${BOLD}Output file:${NC}"
+    echo "    logs/priceisright_logs_<YYYY-MM-DD_HH-MM-SS>.txt"
+    echo ""
+    echo -e "  ${BOLD}How to share:${NC}"
+    echo "    Attach the generated .txt file when reporting issues."
+    echo "    The file includes: service name, timestamp, and all log lines."
+    echo ""
+    sep
+    echo -ne "  ${BOLD}Proceed with Save Logs? [y/N]: ${NC}"
+    read -r confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        echo ""
+        detect_docker || return
+        mkdir -p logs
+        LOGFILE="logs/priceisright_logs_$(date '+%Y-%m-%d_%H-%M-%S').txt"
+        info "Collecting logs from all services..."
+        {
+            echo "================================================================"
+            echo "  THE PRICE IS RIGHT -- AI DEAL HUNTER"
+            echo "  Log Export"
+            echo "  Generated : $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "  Host      : $(hostname)"
+            echo "  Author    : Lalit Nayyar | lalitnayyar@gmail.com"
+            echo "  GitHub    : https://github.com/lalitnayyar/priceisright"
+            echo "================================================================"
+            echo ""
+            for svc in app api chromadb rag-init; do
+                echo "----------------------------------------------------------------"
+                echo "  SERVICE: $svc"
+                echo "----------------------------------------------------------------"
+                $DC logs --no-color --tail=500 "$svc" 2>&1 || echo "  [no logs available for $svc]"
+                echo ""
+            done
+            echo "================================================================"
+            echo "  END OF LOG EXPORT"
+            echo "================================================================"
+        } > "$LOGFILE"
+        echo ""
+        ok "Logs saved to: ${BOLD}$LOGFILE${NC}"
+        echo ""
+        echo -e "  ${DIM}File size : $(wc -c < "$LOGFILE") bytes"
+        echo -e "  Line count: $(wc -l < "$LOGFILE")${NC}"
+        echo ""
+        echo -e "  ${BOLD}To share with support:${NC}"
+        echo "    Email  : lalitnayyar@gmail.com"
+        echo "    Mobile : +971 508 320 336"
+        echo ""
+    fi
+    press_any_key
+}
+
 info_diagnose() {
     clear
     echo ""
@@ -632,6 +695,33 @@ run_direct() {
         test)             ensure_env; mkdir -p tests/reports; $DC run --rm app python scripts/run_tests.py ;;
         status)           $DC ps ;;
         logs)             $DC logs -f "${2:-app}" ;;
+        save-logs)
+            mkdir -p logs
+            LOGFILE="logs/priceisright_logs_$(date '+%Y-%m-%d_%H-%M-%S').txt"
+            info "Collecting logs from all services..."
+            {
+                echo "================================================================"
+                echo "  THE PRICE IS RIGHT -- AI DEAL HUNTER"
+                echo "  Log Export | $(date '+%Y-%m-%d %H:%M:%S')"
+                echo "  Host   : $(hostname)"
+                echo "  Author : Lalit Nayyar | lalitnayyar@gmail.com"
+                echo "  GitHub : https://github.com/lalitnayyar/priceisright"
+                echo "================================================================"
+                for svc in app api chromadb rag-init; do
+                    echo ""
+                    echo "----------------------------------------------------------------"
+                    echo "  SERVICE: $svc"
+                    echo "----------------------------------------------------------------"
+                    $DC logs --no-color --tail=500 "$svc" 2>&1 || echo "  [no logs available for $svc]"
+                done
+                echo ""
+                echo "================================================================"
+                echo "  END OF LOG EXPORT"
+                echo "================================================================"
+            } > "$LOGFILE"
+            ok "Logs saved to: $LOGFILE"
+            echo "  Size: $(wc -c < "$LOGFILE") bytes | Lines: $(wc -l < "$LOGFILE")"
+            ;;
         diagnose)         info_diagnose ;;
         import-settings)
             if [ -z "${2:-}" ]; then err "Usage: ./manage.sh import-settings <file>"; exit 1; fi
@@ -665,6 +755,7 @@ while true; do
         7)  info_test ;;
         8)  info_status ;;
         9)  info_logs ;;
+        13) info_save_logs ;;
         10) info_diagnose ;;
         11) info_import_settings ;;
         12) show_about ;;
@@ -677,7 +768,7 @@ while true; do
             exit 0
             ;;
         *)
-            warn "Invalid option. Please select 0-12."
+            warn "Invalid option. Please select 0-13."
             sleep 1
             ;;
     esac
