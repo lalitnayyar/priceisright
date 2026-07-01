@@ -215,26 +215,29 @@ def get_results():
 
 @app.get("/logs")
 def get_logs(n: int = 100):
-    """Return the last N lines from the application log or scan activity."""
+    """Return the last N lines from the application log file.
+    Checks APP_LOG_FILE env var first, then common fallback paths."""
     import glob
-    # Check common log file locations
+    # Primary: the file written by FileHandler in main.py
+    primary = os.environ.get("APP_LOG_FILE", "/tmp/priceisright_agent.log")
     log_candidates = [
-        "/tmp/app_test.log",
-        "/app/logs/app.log",
+        primary,
+        "/tmp/app_test.log",          # dev redirect fallback
+        "/app/logs/app.log",          # Docker volume mount
         "/tmp/priceisright.log",
     ]
     log_candidates += glob.glob("/app/logs/*.log")
     lines = []
     for log_path in log_candidates:
-        if os.path.exists(log_path):
+        if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
             try:
                 with open(log_path, 'r', errors='replace') as f:
                     all_lines = f.readlines()
-                    lines = [l.rstrip() for l in all_lines[-n:]]
+                    lines = [l.rstrip() for l in all_lines[-n:] if l.strip()]
                 if lines:
                     break
             except Exception:
                 continue
     if not lines:
         lines = ["No log file found. Run a scan to generate activity logs."]
-    return {"lines": lines, "count": len(lines)}
+    return {"lines": lines, "count": len(lines), "source": log_candidates[0] if lines else None}
