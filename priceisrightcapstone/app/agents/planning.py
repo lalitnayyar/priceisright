@@ -15,24 +15,66 @@ import threading
 class PlanningAgent(Agent):
     def __init__(self):
         super().__init__("Planning", "Pipeline Orchestration", "#5DD9D0", "GPT-4o")
-        self.scanner = ScannerAgent()
-        self.frontier = FrontierAgent()
-        self.specialist = SpecialistAgent()
-        self.dnn = NeuralNetworkAgent()
-        self.ensemble = EnsembleAgent()
-        self.messaging = MessagingAgent()
-        
+        self._agents_initialized = False
+        self.scanner = None
+        self.frontier = None
+        self.specialist = None
+        self.dnn = None
+        self.ensemble = None
+        self.messaging = None
+        self.agents = [self]  # Start with just self so get_all_statuses() works immediately
+        # Defer heavy agent init to first use — prevents crash at import time
+        self._init_agents()
+
+    def _init_agents(self):
+        """Initialize all sub-agents, catching errors gracefully so the app starts even if one agent fails."""
+        if self._agents_initialized:
+            return
+        try:
+            self.scanner = ScannerAgent()
+        except Exception as e:
+            self.logger.error(f"ScannerAgent init failed: {e}")
+        try:
+            self.frontier = FrontierAgent()
+        except Exception as e:
+            self.logger.error(f"FrontierAgent init failed: {e}")
+        try:
+            self.specialist = SpecialistAgent()
+        except Exception as e:
+            self.logger.error(f"SpecialistAgent init failed: {e}")
+        try:
+            self.dnn = NeuralNetworkAgent()
+        except Exception as e:
+            self.logger.error(f"NeuralNetworkAgent init failed: {e}")
+        try:
+            self.ensemble = EnsembleAgent()
+        except Exception as e:
+            self.logger.error(f"EnsembleAgent init failed: {e}")
+        try:
+            self.messaging = MessagingAgent()
+        except Exception as e:
+            self.logger.error(f"MessagingAgent init failed: {e}")
         self.agents = [
-            self.scanner, self.frontier, self.specialist, 
-            self.dnn, self.ensemble, self.messaging, self
+            a for a in [self.scanner, self.frontier, self.specialist,
+                        self.dnn, self.ensemble, self.messaging, self]
+            if a is not None
         ]
+        self._agents_initialized = True
 
     def get_all_statuses(self):
         return [a.get_status().model_dump() for a in self.agents]
 
     def run(self):
+        # Re-attempt agent init in case it failed on startup (e.g. bad httpx version)
+        if not self._agents_initialized:
+            self._init_agents()
         self.set_status("RUNNING")
         self.logger.info("Initiating global scan sequence via RSS_FEED_URLS...")
+        
+        if self.scanner is None:
+            self.logger.error("ScannerAgent not available — check httpx/openai version compatibility.")
+            self.set_status("ERROR")
+            return []
         
         results = []
         deals = self.scanner.run()
