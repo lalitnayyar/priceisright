@@ -23,8 +23,10 @@ class ScanResponse(BaseModel):
     status: str
     message: str
 
-@app.get("/")
+@app.get("/health")
 def read_root():
+    """Health check endpoint — use /health to verify the API is online.
+    The root path / is reserved for the Gradio dashboard in dashboard mode."""
     return {"status": "online", "version": "1.2.0", "app": "The Price Is Right"}
 
 @app.get("/settings")
