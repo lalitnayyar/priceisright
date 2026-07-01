@@ -1523,10 +1523,18 @@ def create_dashboard():
                         <!-- SECTION 1: API KEYS -->
                         <!-- ──────────────────────────────────────────────────────────────── -->
                         <div class="pir-group">
-                            <h3>🔑 API Keys</h3>
+                            <h3>🔑 API Keys <small style="font-size:11px;color:#a08070;font-weight:normal;margin-left:8px">
+                                <label style="cursor:pointer;user-select:none">
+                                    <input type="checkbox" id="show-keys-toggle" onchange="toggleKeyVisibility(this.checked)" style="margin-right:4px">Show keys
+                                </label>
+                            </small></h3>
                             <div class="pir-row">
-                                <div class="pir-field"><label>OPENAI API KEY</label><input type="password" id="OPENAI_API_KEY" placeholder="sk-..."></div>
-                                <div class="pir-field"><label>ANTHROPIC API KEY</label><input type="password" id="ANTHROPIC_API_KEY" placeholder="sk-ant-..."></div>
+                                <div class="pir-field"><label>OPENAI API KEY</label>
+                                    <input type="text" id="OPENAI_API_KEY" placeholder="sk-..." class="pir-secret-field" autocomplete="off" spellcheck="false">
+                                </div>
+                                <div class="pir-field"><label>ANTHROPIC API KEY</label>
+                                    <input type="text" id="ANTHROPIC_API_KEY" placeholder="sk-ant-..." class="pir-secret-field" autocomplete="off" spellcheck="false">
+                                </div>
                             </div>
                             <div class="pir-test-row">
                                 <button type="button" class="pir-btn-test" onclick="testApi('openai')">Test OpenAI</button>
@@ -1535,16 +1543,24 @@ def create_dashboard():
                                 <span class="pir-test-status" id="test-anthropic-status">Not tested</span>
                             </div>
                             <div class="pir-row" style="margin-top:14px">
-                                <div class="pir-field"><label>PUSHOVER USER KEY</label><input type="password" id="PUSHOVER_USER" placeholder="User Key"></div>
-                                <div class="pir-field"><label>PUSHOVER APP TOKEN</label><input type="password" id="PUSHOVER_TOKEN" placeholder="App Token"></div>
+                                <div class="pir-field"><label>PUSHOVER USER KEY</label>
+                                    <input type="text" id="PUSHOVER_USER" placeholder="User Key" class="pir-secret-field" autocomplete="off" spellcheck="false">
+                                </div>
+                                <div class="pir-field"><label>PUSHOVER APP TOKEN</label>
+                                    <input type="text" id="PUSHOVER_TOKEN" placeholder="App Token" class="pir-secret-field" autocomplete="off" spellcheck="false">
+                                </div>
                             </div>
                             <div class="pir-test-row">
                                 <button type="button" class="pir-btn-test" onclick="testApi('pushover')">Test Pushover</button>
                                 <span class="pir-test-status" id="test-pushover-status">Not tested</span>
                             </div>
                             <div class="pir-row" style="margin-top:14px">
-                                <div class="pir-field"><label>MODAL TOKEN ID</label><input type="password" id="MODAL_TOKEN_ID" placeholder="ak-..."></div>
-                                <div class="pir-field"><label>MODAL TOKEN SECRET</label><input type="password" id="MODAL_TOKEN_SECRET" placeholder="..."></div>
+                                <div class="pir-field"><label>MODAL TOKEN ID</label>
+                                    <input type="text" id="MODAL_TOKEN_ID" placeholder="ak-..." class="pir-secret-field" autocomplete="off" spellcheck="false">
+                                </div>
+                                <div class="pir-field"><label>MODAL TOKEN SECRET</label>
+                                    <input type="text" id="MODAL_TOKEN_SECRET" placeholder="..." class="pir-secret-field" autocomplete="off" spellcheck="false">
+                                </div>
                             </div>
                             <div class="pir-test-row">
                                 <button type="button" class="pir-btn-test" onclick="testApi('modal')">Test Modal</button>
@@ -1766,7 +1782,19 @@ def create_dashboard():
                     function setField(id, value) {
                         const el = document.getElementById(id);
                         if (!el) return;
-                        el.value = value;
+                        // Use native setter to bypass React/framework value tracking
+                        const nativeSetter = Object.getOwnPropertyDescriptor(
+                            el.tagName === 'SELECT' ? HTMLSelectElement.prototype :
+                            HTMLInputElement.prototype, 'value'
+                        );
+                        if (nativeSetter && nativeSetter.set) {
+                            nativeSetter.set.call(el, value);
+                        } else {
+                            el.value = value;
+                        }
+                        // Dispatch events so the browser registers the change visually
+                        el.dispatchEvent(new Event('input',  { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
                         // Sync slider display span if present
                         const sf = SLIDER_FIELDS.find(s => s.id === id);
                         if (sf && sf.display) {
@@ -1931,6 +1959,24 @@ def create_dashboard():
                             statusEl.className = "pir-test-status err";
                         }
                     }
+
+                    // ── Show/Hide API key visibility ────────────────────────────────
+                    function toggleKeyVisibility(show) {
+                        document.querySelectorAll('.pir-secret-field').forEach(el => {
+                            if (show) {
+                                el.style.webkitTextSecurity = 'none';
+                                el.style.textSecurity = 'none';
+                                el.style.fontFamily = "'JetBrains Mono', monospace";
+                            } else {
+                                el.style.webkitTextSecurity = 'disc';
+                                el.style.textSecurity = 'disc';
+                                el.style.fontFamily = "'password', monospace";
+                            }
+                        });
+                    }
+                    // Apply masking on load
+                    document.addEventListener('DOMContentLoaded', () => toggleKeyVisibility(false));
+                    setTimeout(() => toggleKeyVisibility(false), 500);
 
                     // ── Import .env file ──────────────────────────────────────────────
                     function importEnvFile(input) {
