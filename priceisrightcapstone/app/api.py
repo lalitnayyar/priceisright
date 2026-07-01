@@ -1,8 +1,10 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from fastapi import Request
 from typing import List
+import os
 from app.agents.planning import PlanningAgent
 from app.core.models import DealResult, AgentStatus
 from app.core.config import settings
@@ -18,6 +20,11 @@ app.add_middleware(
 )
 
 planner = PlanningAgent()
+
+# Serve static files (settings.html etc.)
+_static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(_static_dir):
+    app.mount("/static", StaticFiles(directory=_static_dir), name="static")
 
 class ScanResponse(BaseModel):
     status: str
