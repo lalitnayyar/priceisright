@@ -1517,7 +1517,7 @@ def create_dashboard():
                     <h2>System Configuration</h2>
                     <p class="pir-subtitle">Manage your agent parameters, database connections, and external API integrations. Changes apply immediately to all agents.</p>
 
-                    <form id="pir-settings-form-element" onsubmit="event.preventDefault(); savePirSettings();">
+                    <form id="pir-settings-form-element">
 
                         <!-- ──────────────────────────────────────────────────────────────── -->
                         <!-- SECTION 1: API KEYS -->
@@ -1525,7 +1525,7 @@ def create_dashboard():
                         <div class="pir-group">
                             <h3>🔑 API Keys <small style="font-size:11px;color:#a08070;font-weight:normal;margin-left:8px">
                                 <label style="cursor:pointer;user-select:none">
-                                    <input type="checkbox" id="show-keys-toggle" onchange="toggleKeyVisibility(this.checked)" style="margin-right:4px">Show keys
+                                    <input type="checkbox" id="show-keys-toggle" style="margin-right:4px">Show keys
                                 </label>
                             </small></h3>
                             <div class="pir-row">
@@ -1537,9 +1537,9 @@ def create_dashboard():
                                 </div>
                             </div>
                             <div class="pir-test-row">
-                                <button type="button" class="pir-btn-test" onclick="testApi('openai')">Test OpenAI</button>
+                                <button type="button" class="pir-btn-test" data-test="openai">Test OpenAI</button>
                                 <span class="pir-test-status" id="test-openai-status">Not tested</span>
-                                <button type="button" class="pir-btn-test" onclick="testApi('anthropic')">Test Anthropic</button>
+                                <button type="button" class="pir-btn-test" data-test="anthropic">Test Anthropic</button>
                                 <span class="pir-test-status" id="test-anthropic-status">Not tested</span>
                             </div>
                             <div class="pir-row" style="margin-top:14px">
@@ -1551,7 +1551,7 @@ def create_dashboard():
                                 </div>
                             </div>
                             <div class="pir-test-row">
-                                <button type="button" class="pir-btn-test" onclick="testApi('pushover')">Test Pushover</button>
+                                <button type="button" class="pir-btn-test" data-test="pushover">Test Pushover</button>
                                 <span class="pir-test-status" id="test-pushover-status">Not tested</span>
                             </div>
                             <div class="pir-row" style="margin-top:14px">
@@ -1563,7 +1563,7 @@ def create_dashboard():
                                 </div>
                             </div>
                             <div class="pir-test-row">
-                                <button type="button" class="pir-btn-test" onclick="testApi('modal')">Test Modal</button>
+                                <button type="button" class="pir-btn-test" data-test="modal">Test Modal</button>
                                 <span class="pir-test-status" id="test-modal-status">Not tested</span>
                             </div>
                         </div>
@@ -1577,14 +1577,14 @@ def create_dashboard():
                                 <div class="pir-field">
                                     <label>DEAL THRESHOLD (%)</label>
                                     <div class="pir-slider-row">
-                                        <input type="range" id="DEAL_THRESHOLD" min="1" max="90" step="1" oninput="document.getElementById('deal-thresh-val').textContent=this.value">
+                                        <input type="range" id="DEAL_THRESHOLD" min="1" max="90" step="1" data-display="deal-thresh-val">
                                         <span class="pir-slider-val" id="deal-thresh-val">50</span>
                                     </div>
                                 </div>
                                 <div class="pir-field">
                                     <label>SCAN INTERVAL (MIN)</label>
                                     <div class="pir-slider-row">
-                                        <input type="range" id="SCAN_INTERVAL_MINUTES" min="1" max="60" step="1" oninput="document.getElementById('scan-interval-val').textContent=this.value">
+                                        <input type="range" id="SCAN_INTERVAL_MINUTES" min="1" max="60" step="1" data-display="scan-interval-val">
                                         <span class="pir-slider-val" id="scan-interval-val">5</span>
                                     </div>
                                 </div>
@@ -1636,14 +1636,14 @@ def create_dashboard():
                                 <div class="pir-field">
                                     <label>RAG RESULTS COUNT</label>
                                     <div class="pir-slider-row">
-                                        <input type="range" id="CHROMA_RESULTS" min="1" max="20" step="1" oninput="document.getElementById('chroma-results-val').textContent=this.value">
+                                        <input type="range" id="CHROMA_RESULTS" min="1" max="20" step="1" data-display="chroma-results-val">
                                         <span class="pir-slider-val" id="chroma-results-val">5</span>
                                     </div>
                                 </div>
                                 <div class="pir-field">
                                     <label>VISUALISATION MAX POINTS</label>
                                     <div class="pir-slider-row">
-                                        <input type="range" id="RAG_MAX_POINTS" min="100" max="5000" step="100" oninput="document.getElementById('rag-max-val').textContent=this.value">
+                                        <input type="range" id="RAG_MAX_POINTS" min="100" max="5000" step="100" data-display="rag-max-val">
                                         <span class="pir-slider-val" id="rag-max-val">1000</span>
                                     </div>
                                 </div>
@@ -1663,7 +1663,7 @@ def create_dashboard():
                                 <div class="pir-field">
                                     <label>MIN INTERVAL BETWEEN NOTIFICATIONS (MIN)</label>
                                     <div class="pir-slider-row">
-                                        <input type="range" id="NOTIF_MIN_INTERVAL" min="1" max="60" step="1" oninput="document.getElementById('notif-interval-val').textContent=this.value">
+                                        <input type="range" id="NOTIF_MIN_INTERVAL" min="1" max="60" step="1" data-display="notif-interval-val">
                                         <span class="pir-slider-val" id="notif-interval-val">5</span>
                                     </div>
                                 </div>
@@ -1683,7 +1683,7 @@ def create_dashboard():
                                 <div class="pir-field">
                                     <label>MAX DEALS PER SCAN</label>
                                     <div class="pir-slider-row">
-                                        <input type="range" id="MAX_DEALS_PER_SCAN" min="5" max="200" step="5" oninput="document.getElementById('max-deals-val').textContent=this.value">
+                                        <input type="range" id="MAX_DEALS_PER_SCAN" min="5" max="200" step="5" data-display="max-deals-val">
                                         <span class="pir-slider-val" id="max-deals-val">50</span>
                                     </div>
                                 </div>
@@ -1719,11 +1719,11 @@ def create_dashboard():
 
                         <!-- Action Bar -->
                         <div class="pir-action-bar">
-                            <button type="button" class="pir-btn-secondary" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
-                            <button type="button" class="pir-btn-secondary" onclick="validateOnly()">✅ Validate Only</button>
-                            <button type="button" class="pir-btn-secondary" onclick="exportSettings()">📤 Export Settings</button>
-                            <button type="button" class="pir-btn-secondary" onclick="document.getElementById('env-file-input').click()">📂 Import .env</button>
-                            <input type="file" id="env-file-input" accept=".env,text/plain" style="display:none" onchange="importEnvFile(this)">
+                            <button type="button" class="pir-btn-secondary" id="btn-reset">🔄 Reset to Defaults</button>
+                            <button type="button" class="pir-btn-secondary" id="btn-validate">✅ Validate Only</button>
+                            <button type="button" class="pir-btn-secondary" id="btn-export">📤 Export Settings</button>
+                            <button type="button" class="pir-btn-secondary" id="btn-import-env">📂 Import .env</button>
+                            <input type="file" id="env-file-input" accept=".env,text/plain" style="display:none">
                             <button type="submit" class="pir-btn-primary">💾 Save & Apply</button>
                         </div>
                         <div id="pir-status-msg"></div>
@@ -2048,15 +2048,62 @@ def create_dashboard():
                         reader.readAsText(file);
                     }
 
-                    // ── Auto-load on page ready and on tab switch ─────────────────────
-                    document.addEventListener("DOMContentLoaded", loadPirSettings);
-                    // Gradio renders async — retry until elements exist
+                    // ── Wire all event listeners (no inline onclick/onchange) ───────────
+                    function wirePirSettings() {
+                        // Form submit → save
+                        const form = document.getElementById('pir-settings-form-element');
+                        if (form) form.addEventListener('submit', e => { e.preventDefault(); savePirSettings(); });
+
+                        // Save & Apply button (primary)
+                        const saveBtn = document.querySelector('.pir-btn-primary');
+                        if (saveBtn) saveBtn.addEventListener('click', savePirSettings);
+
+                        // Show/hide keys toggle
+                        const keyToggle = document.getElementById('show-keys-toggle');
+                        if (keyToggle) keyToggle.addEventListener('change', () => toggleKeyVisibility(keyToggle.checked));
+
+                        // Test buttons via data-test attribute
+                        document.querySelectorAll('[data-test]').forEach(btn => {
+                            btn.addEventListener('click', () => testApi(btn.getAttribute('data-test')));
+                        });
+
+                        // Sliders via data-display attribute
+                        document.querySelectorAll('input[type=range][data-display]').forEach(slider => {
+                            const displayId = slider.getAttribute('data-display');
+                            slider.addEventListener('input', () => {
+                                const span = document.getElementById(displayId);
+                                if (span) span.textContent = slider.value;
+                            });
+                        });
+
+                        // Action bar buttons
+                        const btnReset = document.getElementById('btn-reset');
+                        if (btnReset) btnReset.addEventListener('click', resetToDefaults);
+
+                        const btnValidate = document.getElementById('btn-validate');
+                        if (btnValidate) btnValidate.addEventListener('click', validateOnly);
+
+                        const btnExport = document.getElementById('btn-export');
+                        if (btnExport) btnExport.addEventListener('click', exportSettings);
+
+                        const btnImport = document.getElementById('btn-import-env');
+                        const fileInput = document.getElementById('env-file-input');
+                        if (btnImport && fileInput) {
+                            btnImport.addEventListener('click', () => fileInput.click());
+                            fileInput.addEventListener('change', () => importEnvFile(fileInput));
+                        }
+
+                        // Load settings after wiring
+                        loadPirSettings();
+                    }
+
+                    // ── Auto-init: retry until DOM elements exist (Gradio renders async) ───
                     let _loadRetries = 0;
                     const _loadTimer = setInterval(() => {
                         const el = document.getElementById("OPENAI_API_KEY");
-                        if (el) { loadPirSettings(); clearInterval(_loadTimer); }
-                        if (++_loadRetries > 30) clearInterval(_loadTimer);
-                    }, 300);
+                        if (el) { wirePirSettings(); clearInterval(_loadTimer); }
+                        if (++_loadRetries > 40) clearInterval(_loadTimer);
+                    }, 250);
                 </script>
                 """)
 
