@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/chroma:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+
+  rag-init:
+    build: .
+    command: ["python", "main.py", "--mode", "init-rag"]
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - chromadb
+
+  api:
+    build: .
+    command: ["python", "main.py", "--mode", "api"]
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - rag-init
+
+  app:
+    build: .
+    command: ["python", "main.py", "--mode", "dashboard"]
+    ports:
+      - "7860:7860"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - api
