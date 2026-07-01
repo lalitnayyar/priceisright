@@ -158,6 +158,178 @@ Test results are automatically exported as timestamped Markdown files in the `te
 
 ---
 
+## 🔄 Wipe and Redeploy from Scratch
+
+Use this procedure when you want a completely clean slate — no cached Docker layers, no stale containers, no old volumes. This is the recommended approach after major code changes or when diagnosing persistent environment issues.
+
+---
+
+### Step 1 — Stop and Remove All Containers for This Project
+
+```bash
+cd priceisright/priceisrightcapstone
+docker compose down --volumes --remove-orphans
+```
+
+| Flag | What it does |
+|------|--------------|
+| `--volumes` | Deletes all named volumes (ChromaDB data, memory store, DNN weights) |
+| `--remove-orphans` | Removes containers not defined in the current `docker-compose.yml` |
+
+---
+
+### Step 2 — Remove All Project Docker Images
+
+```bash
+docker images | grep priceisrightcapstone
+docker rmi $(docker images | grep priceisrightcapstone | awk '{print $3}') -f
+```
+
+Or remove them individually by name:
+
+```bash
+docker rmi priceisrightcapstone-app -f
+docker rmi priceisrightcapstone-api -f
+docker rmi priceisrightcapstone-rag-init -f
+```
+
+---
+
+### Step 3 — (Optional) Nuclear Clean — Remove Everything Docker-wide
+
+> **Warning:** This removes ALL stopped containers, ALL unused images, ALL unused networks, and ALL unused volumes across your entire Docker installation — not just this project. Use with caution on shared machines.
+
+```bash
+docker system prune -a --volumes -f
+```
+
+For a more surgical cleanup that only removes dangling/unused resources:
+
+```bash
+docker image prune -a -f
+docker volume prune -f
+docker network prune -f
+```
+
+---
+
+### Step 4 — Pull Latest Code from GitHub
+
+```bash
+cd priceisright
+git pull origin main
+cd priceisrightcapstone
+```
+
+---
+
+### Step 5 — Verify Your `.env` File is Present
+
+```bash
+cat .env
+```
+
+If the file is missing, recreate it from the template:
+
+```bash
+cp .env.example .env
+nano .env   # Fill in your API keys
+```
+
+Required keys:
+
+```bash
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+PUSHOVER_USER=your_pushover_user_key
+PUSHOVER_TOKEN=your_pushover_app_token
+MODAL_TOKEN_ID=ak-...          # Optional
+MODAL_TOKEN_SECRET=...         # Optional
+DEAL_THRESHOLD=50              # % discount to trigger notification
+SCAN_INTERVAL_MINUTES=5
+```
+
+---
+
+### Step 6 — Fresh Deploy (Build from Scratch, No Cache)
+
+**Linux / macOS / WSL2:**
+```bash
+./manage.sh deploy
+```
+
+**Windows PowerShell:**
+```powershell
+.\manage.ps1 deploy
+```
+
+The `deploy` command will:
+1. Pull the latest code from GitHub
+2. Build all Docker images from scratch (no cache)
+3. Start all 4 services (`chromadb`, `rag-init`, `api`, `app`)
+4. Initialize the RAG vector store with 200 sample products
+
+> **Note:** First build downloads approximately 750 MB of Python packages (PyTorch, Transformers, sentence-transformers, etc.) and takes 10–15 minutes. Subsequent builds use Docker layer cache and complete in under 30 seconds.
+
+---
+
+### Step 7 — Verify All Services are Running
+
+```bash
+./manage.sh status
+```
+
+Expected output:
+
+```
+NAME                                    STATUS              PORTS
+priceisrightcapstone-chromadb-1         running (healthy)   0.0.0.0:8000->8000/tcp
+priceisrightcapstone-rag-init-1         exited (0)          (completed successfully)
+priceisrightcapstone-api-1              running             0.0.0.0:8001->8000/tcp
+priceisrightcapstone-app-1              running             0.0.0.0:7860->7860/tcp
+```
+
+Then open the dashboard at: **http://localhost:7860**
+
+---
+
+### One-Liner: Full Wipe + Redeploy
+
+For convenience, the entire sequence can be run as a single chained command:
+
+**Linux / macOS / WSL2:**
+```bash
+# From inside priceisrightcapstone/
+docker compose down --volumes --remove-orphans && \
+docker rmi $(docker images | grep priceisrightcapstone | awk '{print $3}') -f 2>/dev/null; \
+git pull origin main && \
+./manage.sh deploy
+```
+
+**Windows PowerShell:**
+```powershell
+# From inside priceisrightcapstone/
+docker compose down --volumes --remove-orphans
+docker images | Where-Object { $_ -match 'priceisrightcapstone' } | ForEach-Object { docker rmi ($_ -split '\s+')[2] -f }
+git pull origin main
+.\manage.ps1 deploy
+```
+
+---
+
+### Post-Deploy Health Checks
+
+| Check | Command |
+|-------|---------|
+| View live logs from all services | `./manage.sh logs` |
+| Run full diagnostics | `./manage.sh diagnose` |
+| Verify ChromaDB is healthy | `curl http://localhost:8000/api/v1/heartbeat` |
+| Verify API is responding | `curl http://localhost:7860/status` |
+| Apply code patch without full rebuild | `./manage.sh patch` |
+| Run 118-test suite | `./manage.sh test` |
+
+---
+
 ## 🐛 Troubleshooting Guide
 
 This section documents every known issue and its resolution, in the order they were encountered during deployment.
