@@ -511,6 +511,140 @@ table td, table th,
 ::-webkit-scrollbar-track { background: #1d100c; }
 ::-webkit-scrollbar-thumb { background: #41312c; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #594139; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PIR COMPONENT CLASS OVERRIDES — elem_classes targeting
+   Gradio 4.x wraps each component in a div with the elem_class name.
+   We target the inner input/textarea/select/span through that wrapper.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* pir-input: all text/password/textarea inputs */
+div.pir-input input,
+div.pir-input textarea,
+div.pir-input input[type="text"],
+div.pir-input input[type="password"],
+div.pir-input input[type="email"] {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+    border-color: #594139 !important;
+    caret-color: #ffb59d !important;
+    opacity: 1 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 13px !important;
+}
+div.pir-input input::placeholder,
+div.pir-input textarea::placeholder {
+    color: #7a5a50 !important;
+    -webkit-text-fill-color: #7a5a50 !important;
+    opacity: 1 !important;
+}
+div.pir-input label,
+div.pir-input .label-wrap span {
+    color: #e1bfb5 !important;
+    -webkit-text-fill-color: #e1bfb5 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* pir-status: read-only output textboxes (Test result boxes) */
+div.pir-status input,
+div.pir-status textarea,
+div.pir-status input:disabled,
+div.pir-status textarea:disabled,
+div.pir-status input[readonly],
+div.pir-status textarea[readonly] {
+    color: #ffb59d !important;
+    -webkit-text-fill-color: #ffb59d !important;
+    background-color: #1a0a00 !important;
+    border-color: #594139 !important;
+    opacity: 1 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 12px !important;
+}
+
+/* pir-dropdown: dropdown selected value and list */
+div.pir-dropdown input,
+div.pir-dropdown span.single-value,
+div.pir-dropdown .wrap > span,
+div.pir-dropdown .wrap input,
+div.pir-dropdown [data-testid="dropdown"] input,
+div.pir-dropdown select {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+    border-color: #594139 !important;
+    opacity: 1 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 13px !important;
+}
+div.pir-dropdown label,
+div.pir-dropdown .label-wrap span {
+    color: #e1bfb5 !important;
+    -webkit-text-fill-color: #e1bfb5 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+/* Dropdown popup list items */
+div.pir-dropdown ul li,
+div.pir-dropdown .item,
+div.pir-dropdown .list-items li {
+    color: #f7ddd5 !important;
+    background-color: #2a1c18 !important;
+}
+div.pir-dropdown ul li:hover,
+div.pir-dropdown .item:hover {
+    background-color: #41312c !important;
+    color: #ffb59d !important;
+}
+
+/* pir-slider: slider value number pill */
+div.pir-slider input[type="number"],
+div.pir-slider .wrap > input,
+div.pir-slider input:not([type="range"]) {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+    background-color: #2a1c18 !important;
+    border: 1px solid #594139 !important;
+    border-radius: 4px !important;
+    opacity: 1 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 12px !important;
+}
+div.pir-slider label,
+div.pir-slider .label-wrap span {
+    color: #e1bfb5 !important;
+    -webkit-text-fill-color: #e1bfb5 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* pir-number: number input fields */
+div.pir-number input,
+div.pir-number input[type="number"] {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+    border-color: #594139 !important;
+    opacity: 1 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 13px !important;
+}
+div.pir-number label,
+div.pir-number .label-wrap span {
+    color: #e1bfb5 !important;
+    -webkit-text-fill-color: #e1bfb5 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
 """
 
 # JavaScript injected into the page — injects a <style> tag that cannot be overridden
@@ -587,12 +721,53 @@ _JS_FIX = """
         const BRIGHT = '#f7ddd5';
         const DIM    = '#e1bfb5';
         const BG     = '#1a0a00';
+        const BG2    = '#2a1c18';
         const WARN   = '#ffb59d';
-        document.querySelectorAll('input, textarea, select').forEach(el => {
+
+        // --- Target pir-* wrapper divs specifically ---
+        // pir-input and pir-number: text/password/number inputs
+        document.querySelectorAll('div.pir-input input, div.pir-input textarea, div.pir-number input').forEach(el => {
             el.style.setProperty('color', BRIGHT, 'important');
             el.style.setProperty('-webkit-text-fill-color', BRIGHT, 'important');
             el.style.setProperty('background-color', BG, 'important');
             el.style.setProperty('opacity', '1', 'important');
+            el.style.setProperty('caret-color', WARN, 'important');
+        });
+        // pir-status: read-only output boxes
+        document.querySelectorAll('div.pir-status input, div.pir-status textarea').forEach(el => {
+            el.style.setProperty('color', WARN, 'important');
+            el.style.setProperty('-webkit-text-fill-color', WARN, 'important');
+            el.style.setProperty('background-color', BG, 'important');
+            el.style.setProperty('opacity', '1', 'important');
+        });
+        // pir-dropdown: selected value text
+        document.querySelectorAll('div.pir-dropdown input, div.pir-dropdown span').forEach(el => {
+            el.style.setProperty('color', BRIGHT, 'important');
+            el.style.setProperty('-webkit-text-fill-color', BRIGHT, 'important');
+            el.style.setProperty('background-color', BG, 'important');
+            el.style.setProperty('opacity', '1', 'important');
+        });
+        // pir-slider: number pill
+        document.querySelectorAll('div.pir-slider input[type="number"], div.pir-slider input:not([type="range"])').forEach(el => {
+            el.style.setProperty('color', BRIGHT, 'important');
+            el.style.setProperty('-webkit-text-fill-color', BRIGHT, 'important');
+            el.style.setProperty('background-color', BG2, 'important');
+            el.style.setProperty('opacity', '1', 'important');
+        });
+        // All labels inside pir-* wrappers
+        document.querySelectorAll('div.pir-input label, div.pir-status label, div.pir-dropdown label, div.pir-slider label, div.pir-number label, div.pir-input .label-wrap span, div.pir-dropdown .label-wrap span, div.pir-slider .label-wrap span, div.pir-number .label-wrap span').forEach(el => {
+            el.style.setProperty('color', DIM, 'important');
+            el.style.setProperty('-webkit-text-fill-color', DIM, 'important');
+        });
+
+        // --- Fallback: all inputs everywhere ---
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            if (!el.style.color || el.style.color === '') {
+                el.style.setProperty('color', BRIGHT, 'important');
+                el.style.setProperty('-webkit-text-fill-color', BRIGHT, 'important');
+                el.style.setProperty('background-color', BG, 'important');
+                el.style.setProperty('opacity', '1', 'important');
+            }
             if (el.disabled || el.readOnly || el.getAttribute('disabled') !== null) {
                 el.style.setProperty('color', WARN, 'important');
                 el.style.setProperty('-webkit-text-fill-color', WARN, 'important');
@@ -1058,104 +1233,111 @@ def create_dashboard():
                 with gr.Accordion("🔑 API Keys", open=False):
                     with gr.Row():
                         with gr.Column():
-                            openai_key = gr.Textbox(label="OpenAI API Key", placeholder="sk-...", type="password")
+                            openai_key = gr.Textbox(label="OPENAI API KEY", placeholder="sk-...", type="password", elem_classes=["pir-input"])
                             with gr.Row():
                                 test_openai_btn = gr.Button("Test OpenAI", size="sm", variant="secondary")
-                                openai_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3)
+                                openai_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3, elem_classes=["pir-status"])
                         with gr.Column():
-                            anthropic_key = gr.Textbox(label="Anthropic API Key", placeholder="sk-ant-...", type="password")
+                            anthropic_key = gr.Textbox(label="ANTHROPIC API KEY", placeholder="sk-ant-...", type="password", elem_classes=["pir-input"])
                             with gr.Row():
                                 test_anthropic_btn = gr.Button("Test Anthropic", size="sm", variant="secondary")
-                                anthropic_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3)
+                                anthropic_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3, elem_classes=["pir-status"])
                     with gr.Row():
                         with gr.Column():
-                            pushover_user = gr.Textbox(label="Pushover User Key", placeholder="User Key", type="password")
+                            pushover_user = gr.Textbox(label="PUSHOVER USER KEY", placeholder="User Key", type="password", elem_classes=["pir-input"])
                             with gr.Row():
                                 test_pushover_btn = gr.Button("Test Pushover", size="sm", variant="secondary")
-                                pushover_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3)
+                                pushover_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3, elem_classes=["pir-status"])
                         with gr.Column():
-                            pushover_token = gr.Textbox(label="Pushover App Token", placeholder="App Token", type="password")
+                            pushover_token = gr.Textbox(label="PUSHOVER APP TOKEN", placeholder="App Token", type="password", elem_classes=["pir-input"])
                     with gr.Row():
                         with gr.Column():
-                            modal_id = gr.Textbox(label="Modal Token ID", placeholder="ak-...", type="password")
+                            modal_id = gr.Textbox(label="MODAL TOKEN ID", placeholder="ak-...", type="password", elem_classes=["pir-input"])
                         with gr.Column():
-                            modal_secret = gr.Textbox(label="Modal Token Secret", placeholder="...", type="password")
+                            modal_secret = gr.Textbox(label="MODAL TOKEN SECRET", placeholder="...", type="password", elem_classes=["pir-input"])
                             with gr.Row():
                                 test_modal_btn = gr.Button("Test Modal", size="sm", variant="secondary")
-                                modal_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3)
+                                modal_status = gr.Textbox(label="", show_label=False, interactive=False, scale=3, elem_classes=["pir-status"])
 
                 # Section 2: Agent Configuration
                 with gr.Accordion("🤖 Agent Configuration", open=True):
                     with gr.Row():
-                        deal_threshold = gr.Slider(label="Deal Threshold (%)", minimum=1, maximum=90, value=50, step=1)
-                        scan_interval = gr.Slider(label="Scan Interval (min)", minimum=1, maximum=60, value=5, step=1)
+                        deal_threshold = gr.Slider(label="DEAL THRESHOLD (%)", minimum=1, maximum=90, value=50, step=1, elem_classes=["pir-slider"])
+                        scan_interval = gr.Slider(label="SCAN INTERVAL (MIN)", minimum=1, maximum=60, value=5, step=1, elem_classes=["pir-slider"])
                     with gr.Row():
                         scanner_model = gr.Dropdown(
-                            label="Scanner Model",
+                            label="SCANNER MODEL",
                             choices=["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
-                            value="gpt-4o-mini"
+                            value="gpt-4o-mini",
+                            elem_classes=["pir-dropdown"]
                         )
                         frontier_model = gr.Dropdown(
-                            label="Frontier Model",
+                            label="FRONTIER MODEL",
                             choices=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"],
-                            value="gpt-4o"
+                            value="gpt-4o",
+                            elem_classes=["pir-dropdown"]
                         )
                         messaging_model = gr.Dropdown(
-                            label="Messaging Model",
+                            label="MESSAGING MODEL",
                             choices=["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-haiku-20240307"],
-                            value="claude-3-5-sonnet-20241022"
+                            value="claude-3-5-sonnet-20241022",
+                            elem_classes=["pir-dropdown"]
                         )
                     ens_weights = gr.Textbox(
-                        label="Ensemble Weights (Frontier, Specialist, DNN — must sum to 1.0)",
+                        label="ENSEMBLE WEIGHTS (FRONTIER, SPECIALIST, DNN — MUST SUM TO 1.0)",
                         value="0.8, 0.1, 0.1",
-                        placeholder="0.8, 0.1, 0.1"
+                        placeholder="0.8, 0.1, 0.1",
+                        elem_classes=["pir-input"]
                     )
 
                 # Section 3: RAG Database
                 with gr.Accordion("🧠 RAG Database", open=False):
                     with gr.Row():
-                        chroma_path = gr.Textbox(label="ChromaDB Storage Path", value="./data/products_vectorstore")
+                        chroma_path = gr.Textbox(label="CHROMADB STORAGE PATH", value="./data/products_vectorstore", elem_classes=["pir-input"])
                         embed_model = gr.Dropdown(
-                            label="Embedding Model",
+                            label="EMBEDDING MODEL",
                             choices=["sentence-transformers/all-MiniLM-L6-v2", "text-embedding-3-small", "text-embedding-ada-002"],
-                            value="sentence-transformers/all-MiniLM-L6-v2"
+                            value="sentence-transformers/all-MiniLM-L6-v2",
+                            elem_classes=["pir-dropdown"]
                         )
                     with gr.Row():
-                        chroma_results = gr.Slider(label="RAG Results Count", minimum=1, maximum=20, value=5, step=1)
-                        rag_max_points = gr.Slider(label="Visualisation Max Points", minimum=100, maximum=5000, value=1000, step=100)
+                        chroma_results = gr.Slider(label="RAG RESULTS COUNT", minimum=1, maximum=20, value=5, step=1, elem_classes=["pir-slider"])
+                        rag_max_points = gr.Slider(label="VISUALISATION MAX POINTS", minimum=100, maximum=5000, value=1000, step=100, elem_classes=["pir-slider"])
 
                 # Section 4: Notifications
                 with gr.Accordion("🔔 Notifications", open=False):
                     with gr.Row():
                         notif_sound = gr.Dropdown(
-                            label="Pushover Sound",
+                            label="PUSHOVER SOUND",
                             choices=["pushover", "bike", "bugle", "cashregister", "classical", "cosmic", "falling", "gamelan", "incoming", "intermission", "magic", "mechanical", "pianobar", "siren", "spacealarm", "tugboat", "alien", "climb", "persistent", "echo", "updown"],
-                            value="pushover"
+                            value="pushover",
+                            elem_classes=["pir-dropdown"]
                         )
-                        notif_title = gr.Textbox(label="Notification Title", value="The Price Is Right Alert")
-                    notif_min_interval = gr.Slider(label="Min Interval Between Notifications (min)", minimum=1, maximum=60, value=5, step=1)
+                        notif_title = gr.Textbox(label="NOTIFICATION TITLE", value="The Price Is Right Alert", elem_classes=["pir-input"])
+                    notif_min_interval = gr.Slider(label="MIN INTERVAL BETWEEN NOTIFICATIONS (MIN)", minimum=1, maximum=60, value=5, step=1, elem_classes=["pir-slider"])
 
                 # Section 5: RSS Feeds
                 with gr.Accordion("📡 RSS Feeds", open=True):
                     rss_feeds = gr.Textbox(
-                        label="Feed Sources (one per line)",
+                        label="FEED SOURCES (ONE PER LINE)",
                         value="https://www.dealnews.com/rss.html\nhttps://feeds.feedburner.com/techbargains\nhttps://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1",
                         lines=5,
-                        placeholder="https://..."
+                        placeholder="https://...",
+                        elem_classes=["pir-input"]
                     )
-                    max_deals = gr.Slider(label="Max Deals Per Scan", minimum=1, maximum=200, value=50, step=1)
+                    max_deals = gr.Slider(label="MAX DEALS PER SCAN", minimum=1, maximum=200, value=50, step=1, elem_classes=["pir-slider"])
 
                 # Section 6: Advanced
                 with gr.Accordion("⚙️ Advanced", open=False):
                     with gr.Row():
-                        memory_file = gr.Textbox(label="Memory File Path", value="./data/memory.json")
-                        log_level = gr.Dropdown(label="Log Level", choices=["DEBUG", "INFO", "WARNING", "ERROR"], value="INFO")
+                        memory_file = gr.Textbox(label="MEMORY FILE PATH", value="./data/memory.json", elem_classes=["pir-input"])
+                        log_level = gr.Dropdown(label="LOG LEVEL", choices=["DEBUG", "INFO", "WARNING", "ERROR"], value="INFO", elem_classes=["pir-dropdown"])
                     with gr.Row():
-                        dnn_weights = gr.Textbox(label="DNN Weights Path", value="./data/dnn_weights.pt")
-                        dashboard_port = gr.Number(label="Dashboard Port", value=7860)
-                    api_port = gr.Number(label="API Port", value=8000)
+                        dnn_weights = gr.Textbox(label="DNN WEIGHTS PATH", value="./data/dnn_weights.pt", elem_classes=["pir-input"])
+                        dashboard_port = gr.Number(label="DASHBOARD PORT", value=7860, elem_classes=["pir-number"])
+                    api_port = gr.Number(label="API PORT", value=8000, elem_classes=["pir-number"])
 
-                # ── Settings Action Buttons ──────────────────────────────────
+                # ── Settings Action Buttons ──────────────────────────────────────────────
                 gr.HTML('<div style="height:16px"></div>')
                 with gr.Row():
                     reset_btn = gr.Button("🔄 Reset to Defaults", variant="secondary")
@@ -1163,7 +1345,7 @@ def create_dashboard():
                     export_btn = gr.Button("📤 Export Settings", variant="secondary")
                 save_btn = gr.Button("💾 Save & Apply", variant="primary", size="lg")
 
-                settings_msg = gr.Textbox(label="Status", interactive=False, visible=False)
+                settings_msg = gr.Textbox(label="STATUS", interactive=False, visible=False, elem_classes=["pir-status"])
                 export_output = gr.Code(label=".env Preview / Export", language="shell", visible=False)
 
         # ── Mobile Bottom Nav ─────────────────────────────────────────────────
