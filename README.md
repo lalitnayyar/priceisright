@@ -4,7 +4,7 @@
 
 > **Author:** Lalit Nayyar | lalitnayyar@gmail.com | +971508320336 | +919595353336
 > **Repository:** https://github.com/lalitnayyar/priceisright.git
-> **Current Version:** v2.0.1
+> **Current Version:** v2.1.0
 
 ---
 
@@ -53,7 +53,8 @@ The application is fully containerized and consists of four main Docker services
 | `api` | Custom Python build | 8001 | FastAPI REST API layer (standalone, available for external integrations) |
 | `app` | Custom Python build | **7860** | **Unified service** — Gradio UI + FastAPI REST API both served on port 7860 via `gr.mount_gradio_app` |
 
-> **Architecture Note (v2.0):** The `app` service now mounts Gradio directly onto FastAPI using `gr.mount_gradio_app`. This means the dashboard UI and all REST endpoints (`/settings`, `/status`, `/scan`, `/results`) are served from the **same origin on port 7860**. This eliminates all CORS issues and allows the browser to call API endpoints using simple relative paths (e.g., `fetch('/settings')` instead of `fetch('http://localhost:8001/settings')`). The dashboard is now fully dynamic — all three panels (Agent Status, Deal Opportunities, Live Logs) are driven by live JavaScript polling of the backend API.
+> **Architecture Note (v2.1):** The `app` service mounts Gradio directly onto FastAPI using `gr.mount_gradio_app`. This means the dashboard UI and all REST endpoints (`/settings`, `/status`, `/scan`, `/results`, `/logs`) are served from the **same origin on port 7860**. 
+> **Important UI Change:** To bypass Gradio's strict Svelte sandbox (which strips `onclick` attributes and isolates JavaScript context inside `gr.HTML`), the interactive components (Settings page and Dashboard panels) are now served as **standalone HTML files via FastAPI `StaticFiles`** and embedded in the Gradio layout using `<iframe>`. This ensures that `fetch()` calls to the API and dynamic DOM updates work flawlessly without Gradio interference.
 
 ---
 
@@ -144,6 +145,26 @@ Use `manage.sh` (Linux/macOS/WSL2) or `manage.ps1` (Windows PowerShell) to contr
 | `logs` | `./manage.sh logs` | `.\manage.ps1 logs` | Stream logs from all services |
 | `diagnose` | `./manage.sh diagnose` | `.\manage.ps1 diagnose` | Check Docker, Compose, `.env` keys, and port availability |
 | `save-logs`| `./manage.sh save-logs`| *(Bash only)* | Export all container logs to a shareable `.txt` file |
+
+---
+
+### Issue 9 — Gradio Svelte Sandbox Blocking `fetch()` and `onclick` in `gr.HTML`
+
+**Symptom:**
+- The Agent Status, Deals, and Logs panels were stuck on "Loading..."
+- The Settings "Save" button and "Test API" buttons did nothing when clicked
+- Browser console showed errors like `fetch is not defined` or `ReferenceError: saveSettings is not defined`
+
+**Root Cause:**
+Gradio 4.x uses a Svelte runtime that aggressively sandboxes `<script>` tags embedded inside `gr.HTML()` components. It strips inline `onclick=` handlers, prevents functions from attaching to the global `window` scope, and destroys `addEventListener` wiring whenever the Gradio tab re-renders.
+
+**Fix Applied (v2.1.0):**
+Completely bypassed the Gradio sandbox by moving all interactive HTML to standalone static files served directly by FastAPI:
+1. Created `/app/static/settings.html` and `/app/static/dashboard_panels.html` containing pure HTML/JS/CSS
+2. Mounted the `static/` directory in FastAPI using `StaticFiles`
+3. Replaced the broken `gr.HTML()` blocks in `dashboard.py` with simple `<iframe>` tags pointing to the static files
+4. Added a new `/logs` endpoint to `api.py` to stream live terminal logs to the iframe
+This approach fully decouples the dynamic polling logic from Gradio's reactive state engine, resulting in a perfectly stable, real-time dashboard.
 
 ---
 
