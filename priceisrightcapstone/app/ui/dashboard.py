@@ -331,6 +331,166 @@ input[type="range"] {
 ::-webkit-scrollbar-track { background: var(--background); }
 ::-webkit-scrollbar-thumb { background: var(--surface-container-highest); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--outline-variant); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TEXT VISIBILITY FIXES — Force bright text on ALL input/output elements
+   Overrides Gradio Base theme dark-on-dark rendering
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* All textbox inputs and textareas */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+textarea,
+.gr-text-input input,
+.gr-text-input textarea,
+[data-testid="textbox"] input,
+[data-testid="textbox"] textarea,
+.block textarea,
+.block input {
+    color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+    caret-color: #ffb59d !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+}
+
+/* Placeholder text */
+input::placeholder,
+textarea::placeholder,
+[data-testid="textbox"] input::placeholder,
+[data-testid="textbox"] textarea::placeholder {
+    color: #7a5a50 !important;
+    -webkit-text-fill-color: #7a5a50 !important;
+    opacity: 1 !important;
+}
+
+/* Read-only / non-interactive textboxes (status outputs) */
+input[readonly],
+textarea[readonly],
+.gr-text-input input[readonly],
+.gr-text-input textarea[readonly] {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+}
+
+/* Dropdown selects */
+select,
+.gr-dropdown select,
+[data-testid="dropdown"] select,
+.gr-dropdown input {
+    color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+}
+
+/* Dropdown list items */
+.gr-dropdown ul li,
+.gr-dropdown .item,
+ul.options li {
+    color: #f7ddd5 !important;
+    background-color: #2a1c18 !important;
+}
+
+.gr-dropdown ul li:hover,
+.gr-dropdown .item:hover {
+    background-color: #41312c !important;
+    color: #ffb59d !important;
+}
+
+/* Gradio Textbox wrapper */
+.svelte-1ipelgc,
+.wrap.svelte-1ipelgc {
+    color: #f7ddd5 !important;
+}
+
+/* Number inputs */
+input[type="number"] {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+}
+
+/* Slider value display */
+.gr-slider input[type="number"],
+.wrap input[type="number"] {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+    background-color: #2a1c18 !important;
+    border: 1px solid #594139 !important;
+    border-radius: 4px !important;
+    padding: 2px 6px !important;
+}
+
+/* Code block outputs (export preview) */
+.gr-code,
+.cm-editor,
+.cm-content,
+.cm-line {
+    color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+}
+
+/* Status / output textboxes (non-interactive result boxes) */
+.output-class textarea,
+.output-class input,
+[data-testid="textbox"][disabled] textarea,
+[data-testid="textbox"][disabled] input {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+    background-color: #1a0a00 !important;
+}
+
+/* Warning / validation message boxes */
+.gr-textbox-warning,
+.gr-textbox-error {
+    color: #ffb59d !important;
+    -webkit-text-fill-color: #ffb59d !important;
+}
+
+/* Accordion labels */
+.gr-accordion .label-wrap span,
+.gr-accordion summary,
+.gr-accordion summary span {
+    color: #f7ddd5 !important;
+}
+
+/* Dataframe cells */
+.gr-dataframe td,
+.gr-dataframe tbody td {
+    color: #f7ddd5 !important;
+    background-color: #1d100c !important;
+}
+
+/* Gradio v4 specific — svelte-generated input wrappers */
+.svelte-a4bfok input,
+.svelte-a4bfok textarea,
+.svelte-1cl284s input,
+.svelte-1cl284s textarea {
+    color: #f7ddd5 !important;
+    -webkit-text-fill-color: #f7ddd5 !important;
+}
+
+/* Force all paragraph and span text inside blocks to be visible */
+.block p,
+.block span:not(.badge-ready):not(.badge-running):not(.badge-error):not(.heartbeat-ready):not(.heartbeat-running):not(.heartbeat-error) {
+    color: #f7ddd5 !important;
+}
+
+/* Markdown rendered text */
+.prose p, .prose li, .prose h1, .prose h2, .prose h3 {
+    color: #f7ddd5 !important;
+}
+
+/* Gradio label text above inputs */
+.gr-form label,
+.gr-block label,
+.block label,
+fieldset label,
+.label-wrap {
+    color: #e1bfb5 !important;
+}
 """
 
 def build_agent_status_html(statuses: list) -> str:
