@@ -879,6 +879,36 @@ def build_rag_html(stats: dict) -> str:
     </div>"""
 
 
+def _load_deals_table():
+    """Load real-time deal results from memory.json for the Deals Data Table."""
+    memory_candidates = [
+        "/app/data/memory.json",
+        os.path.join(os.path.dirname(__file__), "..", "..", "data", "memory.json"),
+    ]
+    for path in memory_candidates:
+        path = os.path.normpath(path)
+        if os.path.exists(path):
+            try:
+                with open(path, "r") as f:
+                    data = json.load(f)
+                rows = []
+                for d in data[-50:]:  # show last 50 results
+                    deal = d.get("deal", {})
+                    ens = d.get("ensemble_result", {})
+                    rows.append([
+                        deal.get("title", "Unknown"),
+                        round(float(deal.get("price", 0)), 2),
+                        round(float(ens.get("estimated_price", 0)), 2),
+                        round(float(ens.get("discount_pct", 0)), 1),
+                        bool(ens.get("is_great_deal", False)),
+                        deal.get("url", ""),
+                    ])
+                return rows if rows else []
+            except Exception:
+                pass
+    return []
+
+
 def create_dashboard():
     """Build and return the Gradio app"""
     
@@ -1253,19 +1283,13 @@ def create_dashboard():
                     )
                     refresh_rag_btn = gr.Button("🔄 Refresh RAG Plot", variant="secondary", size="sm")
 
-                # Deals Dataframe (hidden, for data export)
+                # Deals Dataframe — reads from memory.json in real-time
                 with gr.Accordion("📋 Deals Data Table (Export)", open=False):
+                    refresh_deals_btn = gr.Button("🔄 Refresh Deals Table", variant="secondary", size="sm")
                     deals_df = gr.Dataframe(
                         headers=["Title", "Listed $", "Estimated $", "Discount %", "Great Deal?", "URL"],
                         datatype=["str", "number", "number", "number", "bool", "str"],
-                        value=[
-                            [d["deal"]["title"], d["deal"]["price"],
-                             d["ensemble_result"]["estimated_price"],
-                             round(d["ensemble_result"]["discount_pct"], 1),
-                             d["ensemble_result"]["is_great_deal"],
-                             d["deal"]["url"]]
-                            for d in state["results"]
-                        ],
+                        value=_load_deals_table(),
                         interactive=False,
                         wrap=True
                     )
@@ -1310,6 +1334,12 @@ def create_dashboard():
         refresh_rag_btn.click(
             fn=lambda: gr.update(value=build_rag_html(state["rag_stats"])),
             outputs=[rag_html]
+        )
+
+        # Refresh Deals Table from memory.json in real-time
+        refresh_deals_btn.click(
+            fn=lambda: gr.update(value=_load_deals_table()),
+            outputs=[deals_df]
         )
 
     return app

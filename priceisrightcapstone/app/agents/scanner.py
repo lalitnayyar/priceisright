@@ -3,49 +3,118 @@ from app.core.models import Deal
 from app.core.config import settings
 import feedparser
 import json
-from openai import OpenAI
 import uuid
+import re
 
 class ScannerAgent(Agent):
+    """Agent 1 — Parses RSS feeds and uses GPT to extract structured deal candidates."""
+
     def __init__(self):
         super().__init__("Scanner", "RSS Parsing & Deal Extraction", "#FF6B35", settings.SCANNER_MODEL)
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        self._client = None
+
+    def _get_client(self):
+        if self._client is None:
+            from openai import OpenAI
+            self._client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        return self._client
+
+    def _extract_deals_with_gpt(self, entries: list) -> list[dict]:
+        """Use GPT to extract structured deal data from raw RSS entries."""
+        if not settings.OPENAI_API_KEY:
+            self.logger.warning("No OpenAI API key — falling back to heuristic extraction.")
+            return []
+
+        entry_text = "\n".join([
+            f"- Title: {e.get('title','')}\n  Link: {e.get('link','')}\n  Summary: {e.get('summary','')[:200]}"
+            for e in entries[:10]
+        ])
+
+        prompt = f"""You are a deal extraction assistant. Analyze these RSS feed entries and extract up to 5 best deal candidates.
+For each deal, extract: title, estimated_price (numeric USD, guess from context), url, description (1 sentence).
+Return ONLY a valid JSON array like:
+[{{"title":"...", "price": 99.99, "url":"...", "description":"..."}}]
+
+RSS Entries:
+{entry_text}
+
+Return ONLY the JSON array, no other text."""
+
+        try:
+            client = self._get_client()
+            response = client.chat.completions.create(
+                model=settings.SCANNER_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=800
+            )
+            raw = response.choices[0].message.content.strip()
+            raw = re.sub(r'^```(?:json)?\s*', '', raw)
+            raw = re.sub(r'\s*```$', '', raw)
+            deals_data = json.loads(raw)
+            self.logger.info(f"GPT extracted {len(deals_data)} deal candidates from RSS.")
+            return deals_data
+        except Exception as e:
+            self.logger.error(f"GPT extraction failed: {e}")
+            return []
+
+    def _heuristic_extract(self, entries: list, source: str) -> list[Deal]:
+        """Fallback: extract deals heuristically from RSS entry titles/summaries."""
+        deals = []
+        price_pattern = re.compile(r'\$\s*([\d,]+(?:\.\d{1,2})?)')
+        for entry in entries[:5]:
+            title = entry.get("title", "Unknown Product")
+            link = entry.get("link", "https://example.com")
+            summary = entry.get("summary", "")
+            price_match = price_pattern.search(title + " " + summary)
+            price = float(price_match.group(1).replace(",", "")) if price_match else 50.0
+            deals.append(Deal(
+                id=str(uuid.uuid4()),
+                title=title[:120],
+                price=price,
+                url=link,
+                description=summary[:200] if summary else title,
+                source=source
+            ))
+        return deals
 
     def run(self) -> list[Deal]:
         self.set_status("RUNNING")
         self.logger.info("Initiating RSS feed scan...")
-        deals = []
-        feed_urls = settings.RSS_FEED_URLS.split(",")
-        
+        all_deals = []
+        feed_urls = [u.strip() for u in settings.RSS_FEED_URLS.split(",") if u.strip()]
+
         for url in feed_urls:
-            self.logger.info(f"Parsing '{url}'...")
+            self.logger.info(f"Parsing feed: {url}")
             try:
-                feed = feedparser.parse(url.strip())
-                entries = feed.entries[:10] # Limit to top 10 for demo
-                
-                # Mocking LLM extraction for demo due to API constraints in sandbox, 
-                # but implementing the logic as requested
-                prompt = f"Extract 5 best deal candidates from these RSS entries: {entries}. Return as JSON with keys: title, price, url, description."
-                
-                # In a real scenario:
-                # response = self.client.chat.completions.create(
-                #     model=self.model,
-                #     messages=[{"role": "user", "content": prompt}],
-                #     response_format={"type": "json_object"}
-                # )
-                
-                # Dummy deals for demonstration
-                for i, entry in enumerate(entries[:5]):
-                    deals.append(Deal(
-                        id=str(uuid.uuid4()),
-                        title=entry.get("title", f"Mock Product {i}"),
-                        price=100.0 + (i * 10),
-                        url=entry.get("link", "http://example.com"),
-                        description=entry.get("summary", "Mock description"),
-                        source=url
-                    ))
+                feed = feedparser.parse(url)
+                entries = feed.entries
+                if not entries:
+                    self.logger.warning(f"No entries found in feed: {url}")
+                    continue
+                self.logger.info(f"Found {len(entries)} entries. Sending to GPT for extraction...")
+
+                gpt_deals = self._extract_deals_with_gpt(entries)
+                if gpt_deals:
+                    for d in gpt_deals:
+                        try:
+                            all_deals.append(Deal(
+                                id=str(uuid.uuid4()),
+                                title=str(d.get("title", "Unknown Product"))[:120],
+                                price=float(d.get("price", 50.0)),
+                                url=str(d.get("url", entries[0].get("link", url))),
+                                description=str(d.get("description", ""))[:300],
+                                source=url
+                            ))
+                        except Exception as e:
+                            self.logger.warning(f"Skipping malformed deal: {e}")
+                else:
+                    self.logger.info("Using heuristic extraction as GPT fallback.")
+                    all_deals.extend(self._heuristic_extract(entries, url))
+
             except Exception as e:
-                self.logger.error(f"Error parsing {url}: {e}")
-                
+                self.logger.error(f"Error parsing feed {url}: {e}")
+
+        self.logger.info(f"Scanner complete. Total deals extracted: {len(all_deals)}")
         self.set_status("READY")
-        return deals
+        return all_deals
