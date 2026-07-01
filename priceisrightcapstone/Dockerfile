@@ -18,6 +18,7 @@ RUN apt-get update \
 
 # ── Python dependencies ───────────────────────────────────────────────────────
 COPY requirements.txt .
+# Upgrade pip first, then install all deps from PyPI (no extra index needed)
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
