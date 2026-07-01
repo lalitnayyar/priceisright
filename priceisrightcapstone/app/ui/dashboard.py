@@ -1199,16 +1199,12 @@ def create_dashboard():
             button_secondary_border_color="#594139",
             button_primary_text_color="#5d1900",
             button_primary_background_fill="#ffb59d",
-            # ── Table ──────────────────────────────────────────────────────
-            table_text_color="#f7ddd5",
             # ── Checkbox ───────────────────────────────────────────────────
             checkbox_background_color="#1a0a00",
             checkbox_border_color="#594139",
             checkbox_label_text_color="#f7ddd5",
             # ── Slider ─────────────────────────────────────────────────────
             slider_color="#ffb59d",
-            # ── Stat card ──────────────────────────────────────────────────
-            stat_background_fill="#2a1c18",
         )
     ) as app:
 
