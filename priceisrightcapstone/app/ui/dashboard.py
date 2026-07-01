@@ -802,106 +802,11 @@ _JS_FIX = """
 })();
 """
 
-def build_agent_status_html(statuses: list) -> str:
-    rows = ""
-    for s in statuses:
-        status = s.get("status", "READY")
-        if status == "RUNNING":
-            badge = '<span class="badge-running">RUNNING ●</span>'
-            hb = '<span class="heartbeat-running">●</span>'
-        elif status == "ERROR":
-            badge = '<span class="badge-error">⚠ ERROR</span>'
-            hb = '<span class="heartbeat-error">●</span>'
-        else:
-            badge = '<span class="badge-ready">READY</span>'
-            hb = '<span class="heartbeat-ready">●</span>'
-        rows += f"""
-        <tr>
-            <td style="padding:12px 16px;border-bottom:1px solid rgba(89,65,57,0.3);color:#f7ddd5;font-weight:500">{s.get('name','')}</td>
-            <td style="padding:12px 16px;border-bottom:1px solid rgba(89,65,57,0.3)">{badge}</td>
-            <td style="padding:12px 16px;border-bottom:1px solid rgba(89,65,57,0.3)">{hb}</td>
-        </tr>"""
-    return f"""
-    <div style="overflow-x:auto;background:#1d100c;border-radius:8px;border:1px solid #594139">
-    <table style="width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:13px">
-        <thead>
-            <tr style="background:#261814;border-bottom:1px solid #594139">
-                <th style="padding:12px 16px;text-align:left;color:#e1bfb5;text-transform:uppercase;font-size:11px;letter-spacing:0.05em">Agent Module</th>
-                <th style="padding:12px 16px;text-align:left;color:#e1bfb5;text-transform:uppercase;font-size:11px;letter-spacing:0.05em">Current Status</th>
-                <th style="padding:12px 16px;text-align:left;color:#e1bfb5;text-transform:uppercase;font-size:11px;letter-spacing:0.05em">Heartbeat</th>
-            </tr>
-        </thead>
-        <tbody>{rows}</tbody>
-    </table>
-    </div>"""
 
-def build_deals_html(results: list) -> str:
-    if not results:
-        return '<div style="padding:24px;text-align:center;color:#e1bfb5;font-family:\'JetBrains Mono\',monospace">No deals scanned yet. Click "Scan for Deals Now" to begin.</div>'
-    
-    cards = ""
-    for r in results:
-        deal = r.get("deal", {})
-        ensemble = r.get("ensemble_result", {})
-        is_great = ensemble.get("is_great_deal", False)
-        discount = ensemble.get("discount_pct", 0)
-        estimated = ensemble.get("estimated_price", 0)
-        listed = deal.get("price", 0)
-        title = deal.get("title", "Unknown Product")
-        url = deal.get("url", "#")
-        
-        great_badge = '<span style="background:#ff6b35;color:#5f1900;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;font-family:\'JetBrains Mono\',monospace">GREAT DEAL</span>' if is_great else ""
-        border_style = "border-left:4px solid #ff6b35;box-shadow:0 4px 12px rgba(255,107,53,0.15);" if is_great else ""
-        action_btn = f'<a href="{url}" target="_blank" style="background:#ff6b35;color:#5f1900;padding:4px 12px;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;font-family:\'JetBrains Mono\',monospace">SNIPE NOW</a>' if is_great else f'<a href="{url}" target="_blank" style="color:#ffb59d;font-size:11px;font-weight:700;text-decoration:none;font-family:\'JetBrains Mono\',monospace;text-transform:uppercase">Analyze</a>'
-        discount_color = "#ff6b35" if is_great else "#5dd9d0"
-        
-        cards += f"""
-        <div style="background:#2a1c18;border:1px solid #594139;border-radius:8px;padding:16px;margin-bottom:12px;display:flex;gap:16px;align-items:flex-start;{border_style}">
-            <div style="width:64px;height:64px;background:#41312c;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px">🏷️</div>
-            <div style="flex:1">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-                    <span style="font-weight:700;color:#f7ddd5;font-size:15px">{title}</span>
-                    {great_badge}
-                </div>
-                <div style="display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:12px;margin-bottom:8px">
-                    <span style="color:#e1bfb5">Listed: <span style="color:#f7ddd5;font-weight:700">${listed:.2f}</span></span>
-                    <span style="color:#e1bfb5">Est: <span style="color:#f7ddd5">${estimated:.2f}</span></span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span style="color:{discount_color};font-weight:700;font-size:13px">{discount:.1f}% Off Potential</span>
-                    {action_btn}
-                </div>
-            </div>
-        </div>"""
-    return cards
 
-def build_logs_html(log_lines: list) -> str:
-    lines = ""
-    for line in log_lines[-50:]:
-        ts = line.get("ts", "")
-        agent = line.get("agent", "")
-        msg = line.get("msg", "")
-        level = line.get("level", "INFO")
-        
-        if level == "ERROR":
-            color = "#F85149"
-        elif level == "SUCCESS":
-            color = "#4ECDC4"
-        else:
-            color = "#f7ddd5"
-            
-        lines += f'<p style="margin:2px 0"><span style="color:#FF6B35">[{ts}]</span> <span style="color:#5DD9D0">{agent}:</span> <span style="color:{color}">{msg}</span></p>\n'
-    
-    return f"""
-    <div style="background:#000;border:1px solid #594139;border-radius:4px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;max-height:400px;overflow-y:auto;line-height:1.6">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:8px">
-            <div style="width:10px;height:10px;border-radius:50%;background:#F85149"></div>
-            <div style="width:10px;height:10px;border-radius:50%;background:#ff6b35"></div>
-            <div style="width:10px;height:10px;border-radius:50%;background:#5DD9D0"></div>
-            <span style="color:rgba(247,221,213,0.4);margin-left:8px">agent_orchestrator_v1.2.log</span>
-        </div>
-        {lines if lines else '<p style="color:rgba(247,221,213,0.4)">No logs yet. Run a scan to see agent activity.</p>'}
-    </div>"""
+
+
+
 
 def build_rag_html(stats: dict) -> str:
     vectors = stats.get("vectors", 16842)
@@ -1013,23 +918,7 @@ def create_dashboard():
     }
     state["results"] = state["demo_deals"]
 
-    def do_scan():
-        ts = datetime.now().strftime("%H:%M:%S")
-        state["logs"].append({"ts": ts, "agent": "Planning Agent", "msg": "Manual scan triggered by user.", "level": "INFO"})
-        state["agent_statuses"][0]["status"] = "RUNNING"
-        
-        # Simulate scan
-        import time, random
-        time.sleep(0.5)
-        
-        state["agent_statuses"][0]["status"] = "READY"
-        state["logs"].append({"ts": datetime.now().strftime("%H:%M:%S"), "agent": "Scanner Agent", "msg": f"Scan complete. Found {random.randint(3,8)} candidates.", "level": "SUCCESS"})
-        
-        return (
-            gr.update(value=build_agent_status_html(state["agent_statuses"])),
-            gr.update(value=build_deals_html(state["results"])),
-            gr.update(value=build_logs_html(state["logs"])),
-        )
+
 
     # ── Persistence helpers ──────────────────────────────────────────────────
     from app.core.settings_store import SettingsStore
@@ -1352,24 +1241,206 @@ def create_dashboard():
 
                 # Section 1: Agent Framework
                 with gr.Accordion("🤖 Agent Framework", open=True):
-                    agent_status_html = gr.HTML(
-                        value=build_agent_status_html(state["agent_statuses"]),
-                        label=""
-                    )
+                    gr.HTML("""
+                    <div id="dynamic-agent-status-container">
+                        <div style="padding:20px;text-align:center;color:#e1bfb5;font-family:'JetBrains Mono',monospace">
+                            Loading agent status...
+                        </div>
+                    </div>
+                    
+                    <script>
+                    async function fetchAgentStatus() {
+                        try {
+                            const res = await fetch("/status");
+                            if (!res.ok) throw new Error("Status API returned " + res.status);
+                            
+                            const statuses = await res.json();
+                            
+                            let rows = "";
+                            statuses.forEach(s => {
+                                const status = s.status || "READY";
+                                let badge = "";
+                                let hb = "";
+                                
+                                if (status === "RUNNING") {
+                                    badge = '<span class="badge-running">RUNNING ●</span>';
+                                    hb = '<span class="heartbeat-running">●</span>';
+                                } else if (status === "ERROR") {
+                                    badge = '<span class="badge-error">⚠ ERROR</span>';
+                                    hb = '<span class="heartbeat-error">●</span>';
+                                } else {
+                                    badge = '<span class="badge-ready">READY</span>';
+                                    hb = '<span class="heartbeat-ready">●</span>';
+                                }
+                                
+                                rows += `
+                                <tr>
+                                    <td style="padding:12px 16px;border-bottom:1px solid rgba(89,65,57,0.3);color:#f7ddd5;font-weight:500">${s.name || ''}</td>
+                                    <td style="padding:12px 16px;border-bottom:1px solid rgba(89,65,57,0.3)">${badge}</td>
+                                    <td style="padding:12px 16px;border-bottom:1px solid rgba(89,65,57,0.3)">${hb}</td>
+                                </tr>`;
+                            });
+                            
+                            const html = `
+                            <div style="overflow-x:auto;background:#1d100c;border-radius:8px;border:1px solid #594139">
+                            <table style="width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:13px">
+                                <thead>
+                                    <tr style="background:#261814;border-bottom:1px solid #594139">
+                                        <th style="padding:12px 16px;text-align:left;color:#e1bfb5;text-transform:uppercase;font-size:11px;letter-spacing:0.05em">Agent Module</th>
+                                        <th style="padding:12px 16px;text-align:left;color:#e1bfb5;text-transform:uppercase;font-size:11px;letter-spacing:0.05em">Current Status</th>
+                                        <th style="padding:12px 16px;text-align:left;color:#e1bfb5;text-transform:uppercase;font-size:11px;letter-spacing:0.05em">Heartbeat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                            </div>`;
+                            
+                            const container = document.getElementById("dynamic-agent-status-container");
+                            if (container) container.innerHTML = html;
+                        } catch (e) {
+                            console.error("Failed to fetch agent status:", e);
+                        }
+                    }
+                    
+                    // Fetch immediately and then poll every 5 seconds
+                    document.addEventListener("DOMContentLoaded", () => {
+                        fetchAgentStatus();
+                        setInterval(fetchAgentStatus, 5000);
+                    });
+                    </script>
+                    """)
 
                 # Section 2: Deal Opportunities
                 with gr.Accordion("🔥 Deal Opportunities Found", open=True):
-                    deals_html = gr.HTML(
-                        value=build_deals_html(state["results"]),
-                        label=""
-                    )
+                    gr.HTML("""
+                    <div id="dynamic-deals-container">
+                        <div style="padding:24px;text-align:center;color:#e1bfb5;font-family:'JetBrains Mono',monospace">
+                            Loading deals...
+                        </div>
+                    </div>
+                    
+                    <script>
+                    async function fetchDeals() {
+                        try {
+                            const res = await fetch("/results");
+                            if (!res.ok) return;
+                            
+                            const results = await res.json();
+                            
+                            if (!results || results.length === 0) {
+                                document.getElementById("dynamic-deals-container").innerHTML = 
+                                    '<div style="padding:24px;text-align:center;color:#e1bfb5;font-family:\\'JetBrains Mono\\',monospace">No deals scanned yet. Click "Scan for Deals Now" to begin.</div>';
+                                return;
+                            }
+                            
+                            let cards = "";
+                            results.forEach(r => {
+                                const deal = r.deal || {};
+                                const ensemble = r.ensemble_result || {};
+                                const is_great = ensemble.is_great_deal || false;
+                                const discount = ensemble.discount_pct || 0;
+                                const estimated = ensemble.estimated_price || 0;
+                                const listed = deal.price || 0;
+                                const title = deal.title || "Unknown Product";
+                                const url = deal.url || "#";
+                                
+                                const great_badge = is_great ? '<span style="background:#ff6b35;color:#5f1900;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;font-family:\\'JetBrains Mono\\',monospace">GREAT DEAL</span>' : "";
+                                const border_style = is_great ? "border-left:4px solid #ff6b35;box-shadow:0 4px 12px rgba(255,107,53,0.15);" : "";
+                                const action_btn = is_great ? 
+                                    `<a href="${url}" target="_blank" style="background:#ff6b35;color:#5f1900;padding:4px 12px;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;font-family:\\'JetBrains Mono\\',monospace">SNIPE NOW</a>` : 
+                                    `<a href="${url}" target="_blank" style="color:#ffb59d;font-size:11px;font-weight:700;text-decoration:none;font-family:\\'JetBrains Mono\\',monospace;text-transform:uppercase">Analyze</a>`;
+                                const discount_color = is_great ? "#ff6b35" : "#5dd9d0";
+                                
+                                cards += `
+                                <div style="background:#2a1c18;border:1px solid #594139;border-radius:8px;padding:16px;margin-bottom:12px;display:flex;gap:16px;align-items:flex-start;${border_style}">
+                                    <div style="width:64px;height:64px;background:#41312c;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px">🏷️</div>
+                                    <div style="flex:1">
+                                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                                            <span style="font-weight:700;color:#f7ddd5;font-size:15px">${title}</span>
+                                            ${great_badge}
+                                        </div>
+                                        <div style="display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:12px;margin-bottom:8px">
+                                            <span style="color:#e1bfb5">Listed: <span style="color:#f7ddd5;font-weight:700">$${listed.toFixed(2)}</span></span>
+                                            <span style="color:#e1bfb5">Est: <span style="color:#f7ddd5">$${estimated.toFixed(2)}</span></span>
+                                        </div>
+                                        <div style="display:flex;justify-content:space-between;align-items:center">
+                                            <span style="color:${discount_color};font-weight:700;font-size:13px">${discount.toFixed(1)}% Off Potential</span>
+                                            ${action_btn}
+                                        </div>
+                                    </div>
+                                </div>`;
+                            });
+                            
+                            const container = document.getElementById("dynamic-deals-container");
+                            if (container) container.innerHTML = cards;
+                        } catch (e) {
+                            console.error("Failed to fetch deals:", e);
+                        }
+                    }
+                    
+                    // Fetch immediately and then poll every 5 seconds
+                    document.addEventListener("DOMContentLoaded", () => {
+                        fetchDeals();
+                        setInterval(fetchDeals, 5000);
+                    });
+                    </script>
+                    """)
 
                 # Section 3: Live Agent Logs
                 with gr.Accordion("📋 Live Agent Logs", open=True):
-                    logs_html = gr.HTML(
-                        value=build_logs_html(state["logs"]),
-                        label=""
-                    )
+                    gr.HTML("""
+                    <div id="dynamic-logs-container">
+                        <div style="background:#000;border:1px solid #594139;border-radius:4px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;max-height:400px;overflow-y:auto;line-height:1.6">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:8px">
+                                <div style="width:10px;height:10px;border-radius:50%;background:#F85149"></div>
+                                <div style="width:10px;height:10px;border-radius:50%;background:#ff6b35"></div>
+                                <div style="width:10px;height:10px;border-radius:50%;background:#5DD9D0"></div>
+                                <span style="color:rgba(247,221,213,0.4);margin-left:8px">agent_orchestrator_v1.2.log</span>
+                            </div>
+                            <div id="dynamic-logs-content">
+                                <p style="color:rgba(247,221,213,0.4)">Loading logs...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <script>
+                    async function fetchLogs() {
+                        try {
+                            const res = await fetch("/results");
+                            if (!res.ok) return;
+                            
+                            const results = await res.json();
+                            
+                            // For now we'll just extract log-like info from the results since we don't have a dedicated /logs endpoint
+                            // If there are results, show that a scan happened
+                            let lines = "";
+                            const now = new Date();
+                            const ts = now.getHours().toString().padStart(2, '0') + ":" + 
+                                       now.getMinutes().toString().padStart(2, '0') + ":" + 
+                                       now.getSeconds().toString().padStart(2, '0');
+                            
+                            if (results && results.length > 0) {
+                                lines += `<p style="margin:2px 0"><span style="color:#FF6B35">[${ts}]</span> <span style="color:#5DD9D0">System:</span> <span style="color:#4ECDC4">Retrieved ${results.length} recent deals from memory.</span></p>\\n`;
+                            } else {
+                                lines += `<p style="color:rgba(247,221,213,0.4)">No deals in memory yet. Run a scan to see agent activity.</p>`;
+                            }
+                            
+                            const container = document.getElementById("dynamic-logs-content");
+                            if (container && container.innerHTML.includes("Loading")) {
+                                container.innerHTML = lines;
+                            }
+                        } catch (e) {
+                            console.error("Failed to fetch logs:", e);
+                        }
+                    }
+                    
+                    // Fetch immediately and then poll every 5 seconds
+                    document.addEventListener("DOMContentLoaded", () => {
+                        fetchLogs();
+                        setInterval(fetchLogs, 5000);
+                    });
+                    </script>
+                    """)
                     with gr.Row():
                         scan_btn = gr.Button(
                             "🔍 Scan for Deals Now",
@@ -1377,7 +1448,6 @@ def create_dashboard():
                             size="lg",
                             elem_classes=["scan-btn"]
                         )
-                        refresh_logs_btn = gr.Button("🔄 Refresh Logs", variant="secondary", size="sm")
 
                 # Section 4: RAG Vector Store
                 with gr.Accordion("📊 RAG Vector Store", open=True):
@@ -1483,7 +1553,7 @@ def create_dashboard():
                 </div>
 
                 <script>
-                    const API_BASE = window.location.protocol + "//" + window.location.hostname + ":8001";
+                    const API_BASE = ""; // Relative path to FastAPI on same origin
                     const FIELDS = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PUSHOVER_USER", "PUSHOVER_TOKEN", "MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET", "DEAL_THRESHOLD_PCT", "SCAN_INTERVAL_MINUTES", "SCANNER_MODEL", "FRONTIER_MODEL", "MESSAGING_MODEL", "ENSEMBLE_WEIGHTS", "CHROMADB_STORAGE_PATH", "EMBEDDING_MODEL", "RSS_FEEDS"];
 
                     async function loadPirSettings() {
@@ -1583,14 +1653,19 @@ def create_dashboard():
 
         # ── Event Wiring ────────────────────────────────────────────────────────────────
         scan_btn.click(
-            fn=do_scan,
-            outputs=[agent_status_html, deals_html, logs_html]
+            fn=None,
+            js="""
+            async function() {
+                try {
+                    await fetch('/scan', { method: 'POST' });
+                } catch (e) {
+                    console.error('Failed to start scan:', e);
+                }
+            }
+            """
         )
 
-        refresh_logs_btn.click(
-            fn=lambda: gr.update(value=build_logs_html(state["logs"])),
-            outputs=[logs_html]
-        )
+
 
         refresh_rag_btn.click(
             fn=lambda: gr.update(value=build_rag_html(state["rag_stats"])),

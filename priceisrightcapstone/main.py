@@ -10,11 +10,22 @@ logging.basicConfig(
 )
 
 def run_dashboard():
+    import gradio as gr
     from app.ui.dashboard import create_dashboard
-    app = create_dashboard()
-    app.launch(server_name="0.0.0.0", server_port=settings.DASHBOARD_PORT, share=False)
+    from app.api import app as fastapi_app
+    
+    # Create the Gradio app
+    gradio_app = create_dashboard()
+    
+    # Mount the Gradio app onto the FastAPI app
+    # This means FastAPI handles all routes, and Gradio handles the root '/'
+    app = gr.mount_gradio_app(fastapi_app, gradio_app, path="/")
+    
+    # Run the unified app on the dashboard port
+    uvicorn.run(app, host="0.0.0.0", port=settings.DASHBOARD_PORT, reload=False)
 
 def run_api():
+    # Still available as a standalone API on API_PORT if needed
     uvicorn.run("app.api:app", host="0.0.0.0", port=settings.API_PORT, reload=False)
 
 def init_rag():
