@@ -575,7 +575,7 @@ Additional selectors were added for: read-only outputs, dropdowns, number inputs
 
 | Version | Commit | Date | Change |
 |---------|--------|------|--------|
-| v2.0.1 | `TBD` | 2026-07-01 | **fix:** Resolve `httpx`/`openai` proxy crash on startup; **feat:** Add `save-logs` command to `manage.sh` |
+| v2.0.1 | `03b81bf` | 2026-07-01 | **fix:** Resolve `httpx`/`openai` proxy crash on startup; **feat:** Add `save-logs` command to `manage.sh` |
 | v2.0.0 | `e40b2ab` | 2026-07-01 | **fix:** Fully dynamic dashboard — Agent Status, Deals, Logs all driven by live JS polling; Settings CORS fixed; Scan button triggers real backend pipeline |
 | v1.9.0 | `fe54ea4` | 2026-07-01 | **feat:** Mount Gradio onto FastAPI via `gr.mount_gradio_app` — unified port 7860 for UI and API |
 | v1.5.0 | `be3b6bd` | 2026-07-01 | **fix:** Force bright text visibility on all Gradio input/output/status elements |
