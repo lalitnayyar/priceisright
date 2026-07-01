@@ -1,0 +1,115 @@
+direction: right
+
+title: {
+  label: "The Price Is Right — 7-Agent AI Pipeline"
+  near: top-center
+  style.font-size: 20
+  style.bold: true
+}
+
+rss: "📡 RSS Feeds" {
+  shape: cylinder
+  style.fill: "#261814"
+  style.stroke: "#ff6b35"
+  style.font-color: "#f7ddd5"
+}
+
+scanner: "Agent 1\nScanner" {
+  shape: rectangle
+  style.fill: "#2a1c18"
+  style.stroke: "#ff6b35"
+  style.font-color: "#ffb59d"
+  style.bold: true
+}
+
+frontier: "Agent 2\nFrontier" {
+  shape: rectangle
+  style.fill: "#2a1c18"
+  style.stroke: "#4ECDC4"
+  style.font-color: "#5dd9d0"
+  style.bold: true
+}
+
+specialist: "Agent 3\nSpecialist" {
+  shape: rectangle
+  style.fill: "#2a1c18"
+  style.stroke: "#0969DA"
+  style.font-color: "#adc6ff"
+  style.bold: true
+}
+
+dnn: "Agent 4\nNeural Net" {
+  shape: rectangle
+  style.fill: "#2a1c18"
+  style.stroke: "#5dd9d0"
+  style.font-color: "#5dd9d0"
+  style.bold: true
+}
+
+ensemble: "Agent 5\nEnsemble" {
+  shape: rectangle
+  style.fill: "#2a1c18"
+  style.stroke: "#ff6b35"
+  style.font-color: "#ffb59d"
+  style.bold: true
+}
+
+messaging: "Agent 6\nMessaging" {
+  shape: rectangle
+  style.fill: "#2a1c18"
+  style.stroke: "#F85149"
+  style.font-color: "#ffb4ab"
+  style.bold: true
+}
+
+planning: "Agent 7\nPlanning" {
+  shape: hexagon
+  style.fill: "#352722"
+  style.stroke: "#ff6b35"
+  style.font-color: "#ffb59d"
+  style.bold: true
+}
+
+chromadb: "ChromaDB\nRAG Store" {
+  shape: cylinder
+  style.fill: "#261814"
+  style.stroke: "#4ECDC4"
+  style.font-color: "#5dd9d0"
+}
+
+modal: "Modal GPU\nLlama-3.2-3B" {
+  shape: cloud
+  style.fill: "#261814"
+  style.stroke: "#0969DA"
+  style.font-color: "#adc6ff"
+}
+
+pushover: "Pushover\nNotification" {
+  shape: oval
+  style.fill: "#261814"
+  style.stroke: "#F85149"
+  style.font-color: "#ffb4ab"
+}
+
+dashboard: "Gradio\nDashboard" {
+  shape: rectangle
+  style.fill: "#352722"
+  style.stroke: "#ffb59d"
+  style.font-color: "#f7ddd5"
+}
+
+rss -> scanner: "Feed URLs"
+scanner -> planning: "Deal objects"
+planning -> frontier: "Dispatch"
+planning -> specialist: "Dispatch"
+planning -> dnn: "Dispatch"
+frontier -> chromadb: "Query similar"
+chromadb -> frontier: "Top-5 context"
+specialist -> modal: "Infer"
+modal -> specialist: "Price estimate"
+frontier -> ensemble: "Price estimate"
+specialist -> ensemble: "Price estimate"
+dnn -> ensemble: "Price estimate"
+ensemble -> messaging: "Great deal!"
+messaging -> pushover: "Push alert"
+planning -> dashboard: "Status + results"

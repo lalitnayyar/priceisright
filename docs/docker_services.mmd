@@ -1,0 +1,38 @@
+graph TB
+    subgraph Docker["🐳 Docker Compose Stack"]
+        direction TB
+        chromadb["🗄️ chromadb<br/>ChromaDB :8000<br/>Vector Store"]
+        rag_init["🔧 rag-init<br/>Populates 200 sample<br/>products into ChromaDB"]
+        api["⚡ api<br/>FastAPI :8001<br/>/scan /status /results"]
+        app["🖥️ app<br/>Gradio Dashboard :7860<br/>Mobile + Desktop UI"]
+    end
+
+    subgraph Storage["💾 Persistent Volumes"]
+        data["./data/<br/>memory.json<br/>dnn_weights.pt<br/>chroma/"]
+    end
+
+    subgraph External["🌐 External Services"]
+        openai["OpenAI API<br/>GPT-4o / GPT-4o-mini"]
+        anthropic["Anthropic API<br/>Claude Sonnet"]
+        pushover["Pushover API<br/>Push Notifications"]
+        modal["Modal GPU<br/>Llama-3.2-3B"]
+        rss["RSS Feeds<br/>DealNews / TechBargains"]
+    end
+
+    chromadb --> rag_init
+    rag_init --> api
+    api --> app
+    app & api --> data
+    app --> openai
+    app --> anthropic
+    app --> pushover
+    app --> modal
+    app --> rss
+
+    style Docker fill:#2a1c18,stroke:#ff6b35,color:#f7ddd5
+    style Storage fill:#261814,stroke:#4ECDC4,color:#f7ddd5
+    style External fill:#170b08,stroke:#594139,color:#f7ddd5
+    style chromadb fill:#352722,stroke:#4ECDC4,color:#5dd9d0
+    style rag_init fill:#352722,stroke:#ffb59d,color:#ffb59d
+    style api fill:#352722,stroke:#ff6b35,color:#ffb59d
+    style app fill:#352722,stroke:#ffb59d,color:#f7ddd5

@@ -1,0 +1,41 @@
+sequenceDiagram
+    participant P as 🧠 Planning Agent
+    participant S as 📡 Scanner Agent
+    participant F as 🔭 Frontier Agent
+    participant SP as 🤖 Specialist Agent
+    participant D as 🧮 Neural Net Agent
+    participant E as ⚖️ Ensemble Agent
+    participant M as 📲 Messaging Agent
+    participant C as 🗄️ ChromaDB
+    participant MO as ☁️ Modal GPU
+    participant PO as 🔔 Pushover
+
+    P->>S: Trigger RSS scan
+    S-->>P: List of Deal objects
+
+    loop For each Deal
+        P->>F: Estimate price (RAG)
+        F->>C: Query top-5 similar products
+        C-->>F: Embeddings + metadata
+        F-->>P: frontier_price: float
+
+        P->>SP: Estimate price (fine-tuned)
+        SP->>MO: Llama-3.2-3B inference
+        MO-->>SP: price estimate
+        SP-->>P: specialist_price: float
+
+        P->>D: Estimate price (DNN)
+        D-->>P: dnn_price: float
+
+        P->>E: Combine estimates
+        E-->>P: EnsembleResult (discount_pct, is_great_deal)
+
+        alt is_great_deal == True
+            P->>M: Send notification
+            M->>PO: POST /messages.json
+            PO-->>M: 200 OK
+            M-->>P: notification_sent: True
+        end
+    end
+
+    P->>P: Save results to memory.json
