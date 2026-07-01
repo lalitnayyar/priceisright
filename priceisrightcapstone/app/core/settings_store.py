@@ -25,7 +25,9 @@ class SettingsStore:
             
         try:
             with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+            logger.info(f"Successfully read {len(data)} settings from {path}")
+            return data
         except Exception as e:
             logger.error(f"Failed to read settings from {path}: {e}")
             return {}
@@ -38,6 +40,7 @@ class SettingsStore:
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
+            logger.info(f"Successfully wrote {len(data)} settings to {path}")
             return True
         except Exception as e:
             logger.error(f"Failed to write settings to {path}: {e}")

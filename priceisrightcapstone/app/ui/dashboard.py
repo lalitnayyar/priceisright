@@ -1114,6 +1114,8 @@ def create_dashboard():
                       ens_weights, chroma_path, embed_model, chroma_results, rag_max_points,
                       notif_sound, notif_title, notif_min_interval,
                       rss_feeds, max_deals, memory_file, log_level, dnn_weights, dashboard_port, api_port):
+        import logging
+        logging.getLogger(__name__).info("save_settings called from UI")
         d = {
             "OPENAI_API_KEY": openai_key or "",
             "ANTHROPIC_API_KEY": anthropic_key or "",
@@ -1633,13 +1635,6 @@ def create_dashboard():
         test_modal_btn.click(
             fn=lambda k: "✅ Token provided" if k else "⚠️ Token missing (optional)",
             inputs=[modal_id], outputs=[modal_status]
-        )
-
-        # Persistence load on page render
-        app.load(
-            fn=load_saved_settings,
-            inputs=[],
-            outputs=all_settings_inputs
         )
 
     return app
