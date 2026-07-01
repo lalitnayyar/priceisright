@@ -1474,156 +1474,471 @@ def create_dashboard():
             # TAB 2 — SETTINGS (PURE HTML + JS FETCH)
             # ════════════════════════════════════════════════════════════════
             with gr.Tab("⚙️ Settings", id="tab-settings"):
-                gr.HTML("""
+                gr.HTML("""<!-- SETTINGS TAB v2.2 -->
                 <style>
-                    .pir-settings-form { padding: 20px; font-family: 'Hanken Grotesk', sans-serif; color: #f7ddd5; }
-                    .pir-settings-form h2 { color: #ffb59d; border-bottom: 1px solid #594139; padding-bottom: 10px; margin-bottom: 20px; }
+                    .pir-settings-form { padding: 20px; font-family: 'Hanken Grotesk', sans-serif; color: #f7ddd5; max-width: 1200px; margin: 0 auto; }
+                    .pir-settings-form h2 { color: #ffb59d; border-bottom: 1px solid #594139; padding-bottom: 10px; margin-bottom: 8px; font-size: 22px; }
+                    .pir-settings-form .pir-subtitle { color: #e1bfb5; margin-bottom: 24px; font-size: 13px; }
                     .pir-group { background: #2a1c18; border: 1px solid #594139; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-                    .pir-group h3 { margin-top: 0; color: #e1bfb5; }
-                    .pir-row { display: flex; gap: 20px; margin-bottom: 15px; }
-                    .pir-field { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-                    .pir-field label { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #e1bfb5; text-transform: uppercase; }
+                    .pir-group h3 { margin-top: 0; margin-bottom: 16px; color: #e1bfb5; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
+                    .pir-row { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+                    .pir-field { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 5px; }
+                    .pir-field label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #e1bfb5; text-transform: uppercase; }
                     .pir-field input, .pir-field select, .pir-field textarea {
                         background: #1a0a00; border: 1px solid #594139; color: #f7ddd5 !important;
-                        padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 14px; width: 100%; box-sizing: border-box;
+                        padding: 10px 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; width: 100%; box-sizing: border-box;
                     }
-                    .pir-field input:focus, .pir-field select:focus, .pir-field textarea:focus { border-color: #ffb59d; outline: none; }
-                    .pir-btn-primary { background: #ffb59d; color: #5d1900; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 20px; }
+                    .pir-field input:focus, .pir-field select:focus, .pir-field textarea:focus { border-color: #ffb59d; outline: none; box-shadow: 0 0 0 2px rgba(255,181,157,0.2); }
+                    .pir-field select option { background: #1a0a00; color: #f7ddd5; }
+                    /* Slider styling */
+                    .pir-slider-row { display: flex; align-items: center; gap: 12px; }
+                    .pir-slider-row input[type=range] { flex: 1; accent-color: #ffb59d; cursor: pointer; }
+                    .pir-slider-val { background: #1a0a00; border: 1px solid #594139; color: #ffb59d; padding: 4px 10px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 13px; min-width: 50px; text-align: center; }
+                    /* Test button row */
+                    .pir-test-row { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+                    .pir-btn-test { background: #352722; border: 1px solid #594139; color: #e1bfb5; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 12px; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+                    .pir-btn-test:hover { border-color: #ffb59d; color: #ffb59d; }
+                    .pir-test-status { flex: 1; background: #1a0a00; border: 1px solid #594139; border-radius: 6px; padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #7a5a50; min-width: 120px; }
+                    .pir-test-status.ok { color: #4ECDC4; border-color: #2a5a3f; }
+                    .pir-test-status.err { color: #ff6b35; border-color: #5a2a2a; }
+                    /* Bottom action bar */
+                    .pir-action-bar { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+                    .pir-btn-secondary { flex: 1; background: #352722; border: 1px solid #594139; color: #e1bfb5; padding: 12px 16px; border-radius: 6px; cursor: pointer; font-family: 'Hanken Grotesk', sans-serif; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+                    .pir-btn-secondary:hover { border-color: #ffb59d; color: #ffb59d; }
+                    .pir-btn-primary { flex: 2; background: #ffb59d; color: #5d1900; border: none; padding: 14px 24px; font-weight: 700; border-radius: 6px; cursor: pointer; font-size: 15px; font-family: 'Hanken Grotesk', sans-serif; transition: background 0.2s; }
                     .pir-btn-primary:hover { background: #ffc9b8; }
-                    #pir-status-msg { margin-top: 15px; padding: 10px; border-radius: 6px; display: none; font-weight: bold; }
+                    #pir-status-msg { margin-top: 14px; padding: 12px 16px; border-radius: 6px; display: none; font-weight: 600; font-size: 13px; }
                     .pir-success { background: #1b3a28; color: #4ECDC4; border: 1px solid #2a5a3f; }
                     .pir-error { background: #3a1b1b; color: #ff6b35; border: 1px solid #5a2a2a; }
+                    .pir-warn { background: #3a2e1b; color: #ffb59d; border: 1px solid #5a4a2a; }
                 </style>
 
                 <div class="pir-settings-form">
                     <h2>System Configuration</h2>
-                    <p style="color: #e1bfb5; margin-bottom: 30px;">Manage your agent parameters, database connections, and external API integrations. Changes apply immediately to all agents.</p>
+                    <p class="pir-subtitle">Manage your agent parameters, database connections, and external API integrations. Changes apply immediately to all agents.</p>
 
                     <form id="pir-settings-form-element" onsubmit="event.preventDefault(); savePirSettings();">
+
+                        <!-- ──────────────────────────────────────────────────────────────── -->
+                        <!-- SECTION 1: API KEYS -->
+                        <!-- ──────────────────────────────────────────────────────────────── -->
                         <div class="pir-group">
                             <h3>🔑 API Keys</h3>
                             <div class="pir-row">
                                 <div class="pir-field"><label>OPENAI API KEY</label><input type="password" id="OPENAI_API_KEY" placeholder="sk-..."></div>
                                 <div class="pir-field"><label>ANTHROPIC API KEY</label><input type="password" id="ANTHROPIC_API_KEY" placeholder="sk-ant-..."></div>
                             </div>
-                            <div class="pir-row">
+                            <div class="pir-test-row">
+                                <button type="button" class="pir-btn-test" onclick="testApi('openai')">Test OpenAI</button>
+                                <span class="pir-test-status" id="test-openai-status">Not tested</span>
+                                <button type="button" class="pir-btn-test" onclick="testApi('anthropic')">Test Anthropic</button>
+                                <span class="pir-test-status" id="test-anthropic-status">Not tested</span>
+                            </div>
+                            <div class="pir-row" style="margin-top:14px">
                                 <div class="pir-field"><label>PUSHOVER USER KEY</label><input type="password" id="PUSHOVER_USER" placeholder="User Key"></div>
                                 <div class="pir-field"><label>PUSHOVER APP TOKEN</label><input type="password" id="PUSHOVER_TOKEN" placeholder="App Token"></div>
                             </div>
-                            <div class="pir-row">
+                            <div class="pir-test-row">
+                                <button type="button" class="pir-btn-test" onclick="testApi('pushover')">Test Pushover</button>
+                                <span class="pir-test-status" id="test-pushover-status">Not tested</span>
+                            </div>
+                            <div class="pir-row" style="margin-top:14px">
                                 <div class="pir-field"><label>MODAL TOKEN ID</label><input type="password" id="MODAL_TOKEN_ID" placeholder="ak-..."></div>
                                 <div class="pir-field"><label>MODAL TOKEN SECRET</label><input type="password" id="MODAL_TOKEN_SECRET" placeholder="..."></div>
                             </div>
+                            <div class="pir-test-row">
+                                <button type="button" class="pir-btn-test" onclick="testApi('modal')">Test Modal</button>
+                                <span class="pir-test-status" id="test-modal-status">Not tested</span>
+                            </div>
                         </div>
 
+                        <!-- ──────────────────────────────────────────────────────────────── -->
+                        <!-- SECTION 2: AGENT CONFIGURATION -->
+                        <!-- ──────────────────────────────────────────────────────────────── -->
                         <div class="pir-group">
                             <h3>🤖 Agent Configuration</h3>
                             <div class="pir-row">
-                                <div class="pir-field"><label>DEAL THRESHOLD (%)</label><input type="number" id="DEAL_THRESHOLD_PCT" min="1" max="90"></div>
-                                <div class="pir-field"><label>SCAN INTERVAL (MIN)</label><input type="number" id="SCAN_INTERVAL_MINUTES" min="1" max="60"></div>
+                                <div class="pir-field">
+                                    <label>DEAL THRESHOLD (%)</label>
+                                    <div class="pir-slider-row">
+                                        <input type="range" id="DEAL_THRESHOLD" min="1" max="90" step="1" oninput="document.getElementById('deal-thresh-val').textContent=this.value">
+                                        <span class="pir-slider-val" id="deal-thresh-val">50</span>
+                                    </div>
+                                </div>
+                                <div class="pir-field">
+                                    <label>SCAN INTERVAL (MIN)</label>
+                                    <div class="pir-slider-row">
+                                        <input type="range" id="SCAN_INTERVAL_MINUTES" min="1" max="60" step="1" oninput="document.getElementById('scan-interval-val').textContent=this.value">
+                                        <span class="pir-slider-val" id="scan-interval-val">5</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="pir-row">
-                                <div class="pir-field"><label>SCANNER MODEL</label><select id="SCANNER_MODEL"><option>gpt-4o-mini</option><option>gpt-4o</option><option>gpt-3.5-turbo</option></select></div>
-                                <div class="pir-field"><label>FRONTIER MODEL</label><select id="FRONTIER_MODEL"><option>gpt-4o</option><option>gpt-4o-mini</option><option>gpt-4-turbo</option></select></div>
-                                <div class="pir-field"><label>MESSAGING MODEL</label><select id="MESSAGING_MODEL"><option>claude-3-5-sonnet-20241022</option><option>claude-3-opus-20240229</option><option>claude-3-haiku-20240307</option></select></div>
+                                <div class="pir-field"><label>SCANNER MODEL</label>
+                                    <select id="SCANNER_MODEL">
+                                        <option value="gpt-4o-mini">gpt-4o-mini</option>
+                                        <option value="gpt-4o">gpt-4o</option>
+                                        <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                    </select>
+                                </div>
+                                <div class="pir-field"><label>FRONTIER MODEL</label>
+                                    <select id="FRONTIER_MODEL">
+                                        <option value="gpt-4o">gpt-4o</option>
+                                        <option value="gpt-4o-mini">gpt-4o-mini</option>
+                                        <option value="gpt-4-turbo">gpt-4-turbo</option>
+                                    </select>
+                                </div>
+                                <div class="pir-field"><label>MESSAGING MODEL</label>
+                                    <select id="MESSAGING_MODEL">
+                                        <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022</option>
+                                        <option value="claude-3-opus-20240229">claude-3-opus-20240229</option>
+                                        <option value="claude-3-haiku-20240307">claude-3-haiku-20240307</option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="pir-row">
-                                <div class="pir-field"><label>ENSEMBLE WEIGHTS</label><input type="text" id="ENSEMBLE_WEIGHTS"></div>
+                                <div class="pir-field"><label>ENSEMBLE WEIGHTS (FRONTIER, SPECIALIST, DNN — MUST SUM TO 1.0)</label><input type="text" id="ENSEMBLE_WEIGHTS" placeholder="0.8, 0.1, 0.1"></div>
                             </div>
                         </div>
 
+                        <!-- ──────────────────────────────────────────────────────────────── -->
+                        <!-- SECTION 3: RAG & VECTOR STORE -->
+                        <!-- ──────────────────────────────────────────────────────────────── -->
                         <div class="pir-group">
-                            <h3>🧠 RAG & Feeds</h3>
+                            <h3>🧠 RAG & Vector Store</h3>
                             <div class="pir-row">
-                                <div class="pir-field"><label>CHROMADB PATH</label><input type="text" id="CHROMADB_STORAGE_PATH"></div>
-                                <div class="pir-field"><label>EMBEDDING MODEL</label><select id="EMBEDDING_MODEL"><option>sentence-transformers/all-MiniLM-L6-v2</option><option>text-embedding-3-small</option></select></div>
+                                <div class="pir-field"><label>CHROMADB STORAGE PATH</label><input type="text" id="CHROMA_DB_PATH" placeholder="./data/products_vectorstore"></div>
+                                <div class="pir-field"><label>EMBEDDING MODEL</label>
+                                    <select id="EMBEDDING_MODEL">
+                                        <option value="sentence-transformers/all-MiniLM-L6-v2">sentence-transformers/all-MiniLM-L6-v2</option>
+                                        <option value="text-embedding-3-small">text-embedding-3-small</option>
+                                        <option value="text-embedding-3-large">text-embedding-3-large</option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="pir-row">
-                                <div class="pir-field"><label>FEED SOURCES (ONE PER LINE)</label><textarea id="RSS_FEEDS" rows="4"></textarea></div>
+                                <div class="pir-field">
+                                    <label>RAG RESULTS COUNT</label>
+                                    <div class="pir-slider-row">
+                                        <input type="range" id="CHROMA_RESULTS" min="1" max="20" step="1" oninput="document.getElementById('chroma-results-val').textContent=this.value">
+                                        <span class="pir-slider-val" id="chroma-results-val">5</span>
+                                    </div>
+                                </div>
+                                <div class="pir-field">
+                                    <label>VISUALISATION MAX POINTS</label>
+                                    <div class="pir-slider-row">
+                                        <input type="range" id="RAG_MAX_POINTS" min="100" max="5000" step="100" oninput="document.getElementById('rag-max-val').textContent=this.value">
+                                        <span class="pir-slider-val" id="rag-max-val">1000</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <button type="submit" class="pir-btn-primary">💾 Save & Apply</button>
+                        <!-- ──────────────────────────────────────────────────────────────── -->
+                        <!-- SECTION 4: NOTIFICATIONS -->
+                        <!-- ──────────────────────────────────────────────────────────────── -->
+                        <div class="pir-group">
+                            <h3>🔔 Notifications</h3>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>PUSHOVER SOUND</label><input type="text" id="PUSHOVER_SOUND" placeholder="pushover"></div>
+                                <div class="pir-field"><label>NOTIFICATION TITLE</label><input type="text" id="NOTIFICATION_TITLE" placeholder="The Price Is Right Alert"></div>
+                            </div>
+                            <div class="pir-row">
+                                <div class="pir-field">
+                                    <label>MIN INTERVAL BETWEEN NOTIFICATIONS (MIN)</label>
+                                    <div class="pir-slider-row">
+                                        <input type="range" id="NOTIF_MIN_INTERVAL" min="1" max="60" step="1" oninput="document.getElementById('notif-interval-val').textContent=this.value">
+                                        <span class="pir-slider-val" id="notif-interval-val">5</span>
+                                    </div>
+                                </div>
+                                <div class="pir-field"></div>
+                            </div>
+                        </div>
+
+                        <!-- ──────────────────────────────────────────────────────────────── -->
+                        <!-- SECTION 5: FEED SOURCES -->
+                        <!-- ──────────────────────────────────────────────────────────────── -->
+                        <div class="pir-group">
+                            <h3>📡 Feed Sources</h3>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>FEED SOURCES (ONE PER LINE)</label><textarea id="RSS_FEEDS" rows="5" placeholder="https://www.dealnews.com/rss.html"></textarea></div>
+                            </div>
+                            <div class="pir-row">
+                                <div class="pir-field">
+                                    <label>MAX DEALS PER SCAN</label>
+                                    <div class="pir-slider-row">
+                                        <input type="range" id="MAX_DEALS_PER_SCAN" min="5" max="200" step="5" oninput="document.getElementById('max-deals-val').textContent=this.value">
+                                        <span class="pir-slider-val" id="max-deals-val">50</span>
+                                    </div>
+                                </div>
+                                <div class="pir-field"></div>
+                            </div>
+                        </div>
+
+                        <!-- ──────────────────────────────────────────────────────────────── -->
+                        <!-- SECTION 6: SYSTEM -->
+                        <!-- ──────────────────────────────────────────────────────────────── -->
+                        <div class="pir-group">
+                            <h3>⚙️ System</h3>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>MEMORY FILE PATH</label><input type="text" id="MEMORY_FILE" placeholder="./data/memory.json"></div>
+                                <div class="pir-field"><label>LOG LEVEL</label>
+                                    <select id="LOG_LEVEL">
+                                        <option value="INFO">INFO</option>
+                                        <option value="DEBUG">DEBUG</option>
+                                        <option value="WARNING">WARNING</option>
+                                        <option value="ERROR">ERROR</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>DNN WEIGHTS PATH</label><input type="text" id="DNN_WEIGHTS_PATH" placeholder="./data/dnn_weights.pt"></div>
+                                <div class="pir-field"><label>DASHBOARD PORT</label><input type="number" id="DASHBOARD_PORT" placeholder="7860"></div>
+                            </div>
+                            <div class="pir-row">
+                                <div class="pir-field"><label>API PORT</label><input type="number" id="API_PORT" placeholder="8000"></div>
+                                <div class="pir-field"></div>
+                            </div>
+                        </div>
+
+                        <!-- Action Bar -->
+                        <div class="pir-action-bar">
+                            <button type="button" class="pir-btn-secondary" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
+                            <button type="button" class="pir-btn-secondary" onclick="validateOnly()">✅ Validate Only</button>
+                            <button type="button" class="pir-btn-secondary" onclick="exportSettings()">📤 Export Settings</button>
+                            <button type="submit" class="pir-btn-primary">💾 Save & Apply</button>
+                        </div>
                         <div id="pir-status-msg"></div>
                     </form>
                 </div>
 
                 <script>
-                    const API_BASE = ""; // Relative path to FastAPI on same origin
-                    const FIELDS = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PUSHOVER_USER", "PUSHOVER_TOKEN", "MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET", "DEAL_THRESHOLD_PCT", "SCAN_INTERVAL_MINUTES", "SCANNER_MODEL", "FRONTIER_MODEL", "MESSAGING_MODEL", "ENSEMBLE_WEIGHTS", "CHROMADB_STORAGE_PATH", "EMBEDDING_MODEL", "RSS_FEEDS"];
+                    const API_BASE = ""; // Relative path — same origin
 
+                    // All field IDs that map 1-to-1 with DEFAULTS keys in dashboard.py
+                    const SCALAR_FIELDS = [
+                        "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
+                        "PUSHOVER_USER", "PUSHOVER_TOKEN",
+                        "MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET",
+                        "SCANNER_MODEL", "FRONTIER_MODEL", "MESSAGING_MODEL",
+                        "ENSEMBLE_WEIGHTS",
+                        "CHROMA_DB_PATH", "EMBEDDING_MODEL",
+                        "PUSHOVER_SOUND", "NOTIFICATION_TITLE",
+                        "MEMORY_FILE", "LOG_LEVEL", "DNN_WEIGHTS_PATH"
+                    ];
+                    // Slider fields — also need to update the display span
+                    const SLIDER_FIELDS = [
+                        { id: "DEAL_THRESHOLD",      display: "deal-thresh-val",    isInt: true },
+                        { id: "SCAN_INTERVAL_MINUTES", display: "scan-interval-val", isInt: true },
+                        { id: "CHROMA_RESULTS",      display: "chroma-results-val", isInt: true },
+                        { id: "RAG_MAX_POINTS",      display: "rag-max-val",        isInt: true },
+                        { id: "NOTIF_MIN_INTERVAL",  display: "notif-interval-val", isInt: true },
+                        { id: "MAX_DEALS_PER_SCAN",  display: "max-deals-val",      isInt: true },
+                        { id: "DASHBOARD_PORT",      display: null,                 isInt: true },
+                        { id: "API_PORT",            display: null,                 isInt: true }
+                    ];
+
+                    // Defaults used by Reset to Defaults
+                    const FIELD_DEFAULTS = {
+                        OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "",
+                        PUSHOVER_USER: "", PUSHOVER_TOKEN: "",
+                        MODAL_TOKEN_ID: "", MODAL_TOKEN_SECRET: "",
+                        DEAL_THRESHOLD: 50, SCAN_INTERVAL_MINUTES: 5,
+                        SCANNER_MODEL: "gpt-4o-mini", FRONTIER_MODEL: "gpt-4o",
+                        MESSAGING_MODEL: "claude-3-5-sonnet-20241022",
+                        ENSEMBLE_WEIGHTS: "0.8, 0.1, 0.1",
+                        CHROMA_DB_PATH: "./data/products_vectorstore",
+                        EMBEDDING_MODEL: "sentence-transformers/all-MiniLM-L6-v2",
+                        CHROMA_RESULTS: 5, RAG_MAX_POINTS: 1000,
+                        PUSHOVER_SOUND: "pushover",
+                        NOTIFICATION_TITLE: "The Price Is Right Alert",
+                        NOTIF_MIN_INTERVAL: 5,
+                        RSS_FEEDS: "https://www.dealnews.com/rss.html\nhttps://feeds.feedburner.com/techbargains\nhttps://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1",
+                        MAX_DEALS_PER_SCAN: 50,
+                        MEMORY_FILE: "./data/memory.json", LOG_LEVEL: "INFO",
+                        DNN_WEIGHTS_PATH: "./data/dnn_weights.pt",
+                        DASHBOARD_PORT: 7860, API_PORT: 8000
+                    };
+
+                    // ── Helpers ────────────────────────────────────────────────────────
+                    function setField(id, value) {
+                        const el = document.getElementById(id);
+                        if (!el) return;
+                        el.value = value;
+                        // Sync slider display span if present
+                        const sf = SLIDER_FIELDS.find(s => s.id === id);
+                        if (sf && sf.display) {
+                            const span = document.getElementById(sf.display);
+                            if (span) span.textContent = value;
+                        }
+                    }
+
+                    function collectData() {
+                        const data = {};
+                        // Scalar fields — trim whitespace
+                        SCALAR_FIELDS.forEach(f => {
+                            const el = document.getElementById(f);
+                            if (el) data[f] = el.value.trim();
+                        });
+                        // Slider / numeric fields
+                        SLIDER_FIELDS.forEach(sf => {
+                            const el = document.getElementById(sf.id);
+                            if (el) data[sf.id] = sf.isInt ? parseInt(el.value, 10) : parseFloat(el.value);
+                        });
+                        // RSS feeds — trim each line, drop blanks
+                        const rssEl = document.getElementById("RSS_FEEDS");
+                        if (rssEl) {
+                            data["RSS_FEEDS"] = rssEl.value
+                                .split("\n")
+                                .map(l => l.trim())
+                                .filter(l => l !== "");
+                        }
+                        return data;
+                    }
+
+                    function showMsg(text, cls) {
+                        const msg = document.getElementById("pir-status-msg");
+                        msg.textContent = text;
+                        msg.className = cls;
+                        msg.style.display = "block";
+                        if (cls === "pir-success") setTimeout(() => msg.style.display = "none", 5000);
+                    }
+
+                    // ── Load settings from /settings ──────────────────────────────────
                     async function loadPirSettings() {
                         try {
                             const res = await fetch(API_BASE + "/settings");
-                            if (res.ok) {
-                                const data = await res.json();
-                                FIELDS.forEach(f => {
-                                    const el = document.getElementById(f);
-                                    if (el && data[f] !== undefined) {
-                                        if (f === "RSS_FEEDS" && Array.isArray(data[f])) {
-                                            el.value = data[f].join("\\n");
-                                        } else {
-                                            el.value = data[f];
-                                        }
-                                    }
-                                });
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            // Scalar fields
+                            SCALAR_FIELDS.forEach(f => {
+                                if (data[f] !== undefined) setField(f, data[f]);
+                            });
+                            // Slider fields
+                            SLIDER_FIELDS.forEach(sf => {
+                                if (data[sf.id] !== undefined) setField(sf.id, data[sf.id]);
+                            });
+                            // RSS feeds — array → newline-separated
+                            if (data["RSS_FEEDS"] !== undefined) {
+                                const rssEl = document.getElementById("RSS_FEEDS");
+                                if (rssEl) {
+                                    rssEl.value = Array.isArray(data["RSS_FEEDS"])
+                                        ? data["RSS_FEEDS"].join("\n")
+                                        : String(data["RSS_FEEDS"]).trim();
+                                }
                             }
                         } catch (e) {
                             console.error("Failed to load settings:", e);
                         }
                     }
 
+                    // ── Save settings to /settings ────────────────────────────────────
                     async function savePirSettings() {
-                        const btn = document.querySelector('.pir-btn-primary');
-                        const msg = document.getElementById('pir-status-msg');
+                        const btn = document.querySelector(".pir-btn-primary");
                         btn.textContent = "💾 Saving...";
-                        
-                        const data = {};
-                        FIELDS.forEach(f => {
-                            const val = document.getElementById(f).value;
-                            if (f === "DEAL_THRESHOLD_PCT" || f === "SCAN_INTERVAL_MINUTES") {
-                                data[f] = parseInt(val, 10);
-                            } else if (f === "RSS_FEEDS") {
-                                data[f] = val.split("\\n").filter(line => line.trim() !== "");
-                            } else {
-                                data[f] = val;
-                            }
-                        });
-
+                        btn.disabled = true;
                         try {
                             const res = await fetch(API_BASE + "/settings", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify(data)
+                                body: JSON.stringify(collectData())
                             });
                             if (res.ok) {
-                                msg.textContent = "✅ Settings saved successfully! Agents will use new values immediately.";
-                                msg.className = "pir-success";
-                                msg.style.display = "block";
-                                setTimeout(() => msg.style.display = "none", 5000);
+                                showMsg("✅ Settings saved! All agents will use the new values immediately.", "pir-success");
                             } else {
-                                throw new Error("Server returned " + res.status);
+                                const err = await res.text();
+                                showMsg("❌ Save failed (HTTP " + res.status + "): " + err, "pir-error");
                             }
                         } catch (e) {
-                            msg.textContent = "❌ Failed to save settings: " + e.message;
-                            msg.className = "pir-error";
-                            msg.style.display = "block";
+                            showMsg("❌ Network error: " + e.message, "pir-error");
                         } finally {
                             btn.textContent = "💾 Save & Apply";
+                            btn.disabled = false;
                         }
                     }
 
-                    // Load immediately and also when tab becomes visible
-                    document.addEventListener("DOMContentLoaded", loadPirSettings);
-                    setInterval(() => {
-                        const tab = document.getElementById("tab-settings");
-                        if (tab && tab.style.display !== "none" && !tab.dataset.loaded) {
-                            loadPirSettings();
-                            tab.dataset.loaded = "true";
-                        } else if (tab && tab.style.display === "none") {
-                            tab.dataset.loaded = "";
+                    // ── Reset to Defaults ─────────────────────────────────────────────
+                    function resetToDefaults() {
+                        if (!confirm("Reset all settings to factory defaults? Unsaved changes will be lost.")) return;
+                        Object.entries(FIELD_DEFAULTS).forEach(([k, v]) => {
+                            if (k === "RSS_FEEDS") {
+                                const el = document.getElementById(k);
+                                if (el) el.value = v;
+                            } else {
+                                setField(k, v);
+                            }
+                        });
+                        showMsg("⚠️ Defaults loaded. Click Save & Apply to persist.", "pir-warn");
+                    }
+
+                    // ── Validate Only ─────────────────────────────────────────────────
+                    function validateOnly() {
+                        const data = collectData();
+                        const errors = [];
+                        if (!data.OPENAI_API_KEY) errors.push("OpenAI API Key is empty");
+                        if (!data.ANTHROPIC_API_KEY) errors.push("Anthropic API Key is empty");
+                        const weights = data.ENSEMBLE_WEIGHTS.split(",").map(w => parseFloat(w.trim()));
+                        const wSum = weights.reduce((a, b) => a + b, 0);
+                        if (Math.abs(wSum - 1.0) > 0.01) errors.push("Ensemble weights must sum to 1.0 (current: " + wSum.toFixed(3) + ")");
+                        if (data.DEAL_THRESHOLD < 1 || data.DEAL_THRESHOLD > 90) errors.push("Deal threshold must be 1-90");
+                        if (errors.length === 0) {
+                            showMsg("✅ Validation passed. All required fields are present and values are in range.", "pir-success");
+                        } else {
+                            showMsg("❌ Validation errors:\n" + errors.join("\n"), "pir-error");
                         }
-                    }, 500);
+                    }
+
+                    // ── Export Settings ───────────────────────────────────────────────
+                    function exportSettings() {
+                        const data = collectData();
+                        // Mask secrets before export
+                        const safe = Object.assign({}, data);
+                        ["OPENAI_API_KEY","ANTHROPIC_API_KEY","PUSHOVER_USER","PUSHOVER_TOKEN","MODAL_TOKEN_ID","MODAL_TOKEN_SECRET"]
+                            .forEach(k => { if (safe[k]) safe[k] = safe[k].substring(0, 4) + "****"; });
+                        const blob = new Blob([JSON.stringify(safe, null, 2)], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = "priceisright_settings_" + new Date().toISOString().slice(0,10) + ".json";
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        showMsg("✅ Settings exported (API keys masked for safety).", "pir-success");
+                    }
+
+                    // ── Test API connections ──────────────────────────────────────────
+                    async function testApi(service) {
+                        const statusEl = document.getElementById("test-" + service + "-status");
+                        statusEl.textContent = "⏳ Testing...";
+                        statusEl.className = "pir-test-status";
+                        try {
+                            const res = await fetch(API_BASE + "/test-api/" + service, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(collectData())
+                            });
+                            const result = await res.json();
+                            if (result.ok) {
+                                statusEl.textContent = "✅ " + (result.message || "Connected");
+                                statusEl.className = "pir-test-status ok";
+                            } else {
+                                statusEl.textContent = "⚠️ " + (result.message || "Failed");
+                                statusEl.className = "pir-test-status err";
+                            }
+                        } catch (e) {
+                            statusEl.textContent = "❌ " + e.message;
+                            statusEl.className = "pir-test-status err";
+                        }
+                    }
+
+                    // ── Auto-load on page ready and on tab switch ─────────────────────
+                    document.addEventListener("DOMContentLoaded", loadPirSettings);
+                    // Gradio renders async — retry until elements exist
+                    let _loadRetries = 0;
+                    const _loadTimer = setInterval(() => {
+                        const el = document.getElementById("OPENAI_API_KEY");
+                        if (el) { loadPirSettings(); clearInterval(_loadTimer); }
+                        if (++_loadRetries > 30) clearInterval(_loadTimer);
+                    }, 300);
                 </script>
                 """)
 

@@ -57,6 +57,86 @@ def trigger_scan(background_tasks: BackgroundTasks):
 def get_status():
     return planner.get_all_statuses()
 
+@app.post("/test-api/{service}")
+async def test_api_connection(service: str, request: Request):
+    """Test connectivity for a given API service using the keys submitted from the UI."""
+    import httpx
+    data = await request.json()
+
+    if service == "openai":
+        key = (data.get("OPENAI_API_KEY") or "").strip()
+        if not key:
+            return {"ok": False, "message": "OpenAI API key is empty"}
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.get(
+                    "https://api.openai.com/v1/models",
+                    headers={"Authorization": f"Bearer {key}"}
+                )
+            if r.status_code == 200:
+                return {"ok": True, "message": "Connected — OpenAI API is valid"}
+            else:
+                return {"ok": False, "message": f"HTTP {r.status_code}: {r.text[:120]}"}
+        except Exception as e:
+            return {"ok": False, "message": str(e)}
+
+    elif service == "anthropic":
+        key = (data.get("ANTHROPIC_API_KEY") or "").strip()
+        if not key:
+            return {"ok": False, "message": "Anthropic API key is empty"}
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json"
+                    },
+                    json={"model": "claude-3-haiku-20240307", "max_tokens": 1,
+                          "messages": [{"role": "user", "content": "hi"}]}
+                )
+            if r.status_code in (200, 400):
+                return {"ok": True, "message": "Connected — Anthropic API is valid"}
+            else:
+                return {"ok": False, "message": f"HTTP {r.status_code}: {r.text[:120]}"}
+        except Exception as e:
+            return {"ok": False, "message": str(e)}
+
+    elif service == "pushover":
+        user = (data.get("PUSHOVER_USER") or "").strip()
+        token = (data.get("PUSHOVER_TOKEN") or "").strip()
+        if not user or not token:
+            return {"ok": False, "message": "Pushover User Key or App Token is empty"}
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.post(
+                    "https://api.pushover.net/1/users/validate.json",
+                    data={"token": token, "user": user}
+                )
+            body = r.json()
+            if body.get("status") == 1:
+                return {"ok": True, "message": "Connected — Pushover credentials are valid"}
+            else:
+                return {"ok": False, "message": body.get("errors", ["Invalid credentials"])[0]}
+        except Exception as e:
+            return {"ok": False, "message": str(e)}
+
+    elif service == "modal":
+        token_id = (data.get("MODAL_TOKEN_ID") or "").strip()
+        token_secret = (data.get("MODAL_TOKEN_SECRET") or "").strip()
+        if not token_id or not token_secret:
+            return {"ok": False, "message": "Modal Token ID or Secret is empty"}
+        # Modal does not have a simple REST ping — validate format only
+        if token_id.startswith("ak-") and len(token_secret) > 10:
+            return {"ok": True, "message": "Format looks valid — full validation requires Modal CLI"}
+        else:
+            return {"ok": False, "message": "Token ID should start with ak- and secret must be non-empty"}
+
+    else:
+        return {"ok": False, "message": f"Unknown service: {service}"}
+
+
 @app.get("/results", response_model=List[DealResult])
 def get_results():
     # Return last run results from memory file
