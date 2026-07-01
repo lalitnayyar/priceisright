@@ -326,7 +326,7 @@ git pull origin main
 | Export all logs to a shareable file | `./manage.sh save-logs` |
 | Run full diagnostics | `./manage.sh diagnose` |
 | Verify ChromaDB is healthy | `curl http://localhost:8000/api/v1/heartbeat` |
-| Verify API is responding | `curl http://localhost:7860/status` |
+| Verify API is responding | `curl http://localhost:7860/health` |
 | Apply code patch without full rebuild | `./manage.sh patch` |
 | Run 118-test suite | `./manage.sh test` |
 
