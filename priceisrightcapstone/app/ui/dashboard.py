@@ -1032,19 +1032,16 @@ def create_dashboard():
         )
 
     # ── Persistence helpers ──────────────────────────────────────────────────
+    from app.core.settings_store import SettingsStore
+    
     if os.path.exists("/app/data"):
-        SETTINGS_JSON_PATH = "/app/data/ui_settings.json"
         EXPORT_JSON_PATH   = "/app/data/settings_export.json"
         ENV_PATH           = "/app/.env"
     else:
-        SETTINGS_JSON_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "ui_settings.json")
-        SETTINGS_JSON_PATH = os.path.normpath(SETTINGS_JSON_PATH)
         EXPORT_JSON_PATH   = os.path.join(os.path.dirname(__file__), "..", "..", "data", "settings_export.json")
         EXPORT_JSON_PATH   = os.path.normpath(EXPORT_JSON_PATH)
         ENV_PATH           = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
         ENV_PATH           = os.path.normpath(ENV_PATH)
-
-    os.makedirs(os.path.dirname(SETTINGS_JSON_PATH), exist_ok=True)
 
     DEFAULTS = {
         "OPENAI_API_KEY": "",
@@ -1077,15 +1074,8 @@ def create_dashboard():
 
     def _load_persisted():
         """Load saved settings from ui_settings.json, falling back to DEFAULTS."""
-        try:
-            if os.path.exists(SETTINGS_JSON_PATH):
-                with open(SETTINGS_JSON_PATH, "r") as f:
-                    saved = json.load(f)
-                merged = {**DEFAULTS, **saved}
-                return merged
-        except Exception:
-            pass
-        return dict(DEFAULTS)
+        saved = SettingsStore.read()
+        return {**DEFAULTS, **saved}
 
     def _write_env(d: dict):
         """Write all settings to .env file."""
@@ -1154,8 +1144,7 @@ def create_dashboard():
         }
         try:
             # 1. Persist to ui_settings.json (survives tab switches & page refreshes)
-            with open(SETTINGS_JSON_PATH, "w") as f:
-                json.dump(d, f, indent=2)
+            SettingsStore.write(d)
             # 2. Write .env so agents pick up changes on next restart
             _write_env(d)
             return gr.update(value="✅ Settings saved to disk and .env updated. Restart services to apply agent changes.", visible=True)
@@ -1644,6 +1633,13 @@ def create_dashboard():
         test_modal_btn.click(
             fn=lambda k: "✅ Token provided" if k else "⚠️ Token missing (optional)",
             inputs=[modal_id], outputs=[modal_status]
+        )
+
+        # Persistence load on page render
+        app.load(
+            fn=load_saved_settings,
+            inputs=[],
+            outputs=all_settings_inputs
         )
 
     return app

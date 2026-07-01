@@ -43,21 +43,13 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     """Load settings dynamically from ui_settings.json if available, fallback to .env/defaults."""
-    import json
-    # In Docker, we are at /app, so data is at /app/data
-    # Locally, we might be running from the root
-    if os.path.exists("/app/data"):
-        settings_path = "/app/data/ui_settings.json"
-    else:
-        settings_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "ui_settings.json")
-        settings_path = os.path.normpath(settings_path)
+    from app.core.settings_store import SettingsStore
     
     base_settings = Settings()
+    ui_data = SettingsStore.read()
     
-    if os.path.exists(settings_path):
+    if ui_data:
         try:
-            with open(settings_path, "r") as f:
-                ui_data = json.load(f)
             
             # Map ui_settings.json keys to Settings object
             if "OPENAI_API_KEY" in ui_data: base_settings.OPENAI_API_KEY = ui_data["OPENAI_API_KEY"]
