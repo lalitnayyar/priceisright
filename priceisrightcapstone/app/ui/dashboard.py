@@ -1857,6 +1857,9 @@ def create_dashboard():
                                         : String(data["RSS_FEEDS"]).trim();
                                 }
                             }
+                            // Re-apply current key visibility state after load
+                            const toggle = document.getElementById('show-keys-toggle');
+                            toggleKeyVisibility(toggle ? toggle.checked : false);
                         } catch (e) {
                             console.error("Failed to load settings:", e);
                         }
@@ -2035,7 +2038,10 @@ def create_dashboard():
                                     count++;
                                 }
                             });
-                            showMsg("✅ Imported " + count + " value(s) from .env — click Save & Apply to persist.", "pir-success");
+                            showMsg("✅ Imported " + count + " value(s) from .env — review values below, then click Save & Apply.", "pir-success");
+                            // Auto-show keys so user can verify imported values
+                            const toggle = document.getElementById('show-keys-toggle');
+                            if (toggle) { toggle.checked = true; toggleKeyVisibility(true); }
                             // Reset file input so same file can be re-imported
                             input.value = "";
                         };
