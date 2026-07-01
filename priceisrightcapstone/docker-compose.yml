@@ -48,6 +48,10 @@ services:
       - .env
     volumes:
       - ./data:/app/data
+      # Live code mount: git pull + restart is enough, no rebuild needed
+      - .:/app
+      # Re-mount data over the top so the host ./data bind still wins
+      - ./data:/app/data
     depends_on:
       chromadb:
         condition: service_healthy
@@ -61,6 +65,10 @@ services:
     env_file:
       - .env
     volumes:
+      - ./data:/app/data
+      # Live code mount: git pull + restart is enough, no rebuild needed
+      - .:/app
+      # Re-mount data over the top so the host ./data bind still wins
       - ./data:/app/data
     depends_on:
       - api
