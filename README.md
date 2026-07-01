@@ -6,19 +6,34 @@
 > **Repository:** https://github.com/lalitnayyar/priceisright.git
 > **Current Version:** v2.1.0
 
+*Disclaimer: This document is authored by Lalit Nayyar. Contact: lalitnayyar@gmail.com, +971508320336, +919595353336.*
+
 ---
 
 ## 📸 Application Screenshots
 
-### 🖥️ Dashboard View
-The main dashboard provides a real-time view of the agent framework, recently discovered deals, live terminal logs, and the RAG vector store capacity.
+### 🖥️ Main Dashboard
+The main dashboard provides a unified view of the entire AI Deal Hunter system.
+![Dashboard Overview](priceisrightcapstone/docs/screenshots/01_dashboard_overview.webp)
 
-![Dashboard](docs/screenshots/dashboard_mobile.png)
+### 🤖 Live Dashboard Panels
+Real-time tracking of the 7-agent framework, discovered deals, and live terminal logs.
+![Live Dashboard Panels](priceisrightcapstone/docs/screenshots/02_live_dashboard_panels.webp)
 
-### ⚙️ Settings View
-The live settings page allows you to configure API keys, agent parameters, ensemble weights, and RSS feeds on the fly without restarting the application.
+### 🔍 Background Deal Scanning
+Trigger scans directly from the UI. The orchestrator runs the pipeline asynchronously while updating agent statuses to RUNNING.
+![Scan Triggered](priceisrightcapstone/docs/screenshots/03_scan_triggered.webp)
+![Agents Running](priceisrightcapstone/docs/screenshots/06_agents_running_state.webp)
 
-![Settings](docs/screenshots/settings_mobile.png)
+### 📊 RAG Vector Store & Deals Data
+Monitor ChromaDB capacity, vector growth trends, and export the raw deals data table.
+![RAG Vector Store](priceisrightcapstone/docs/screenshots/07_rag_vector_store.webp)
+![Deals Data Table](priceisrightcapstone/docs/screenshots/08_deals_data_table.webp)
+
+### ⚙️ Settings & Configuration
+Configure API keys with live validation, agent parameters, and system integrations on the fly.
+![Settings - API Keys](priceisrightcapstone/docs/screenshots/04_settings_api_keys.webp)
+![Settings - Agent Config](priceisrightcapstone/docs/screenshots/05_settings_agent_config.webp)
 
 ---
 
