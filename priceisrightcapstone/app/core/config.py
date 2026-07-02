@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     SCAN_INTERVAL_MINUTES: int = 5
     SCANNER_MODEL: str = "gpt-4o-mini"
     FRONTIER_MODEL: str = "gpt-4o"
-    MESSAGING_MODEL: str = "claude-3-5-sonnet-latest"
+    MESSAGING_MODEL: str = "claude-sonnet-4-5-20250929"
     ENSEMBLE_FRONTIER_WEIGHT: float = 0.8
     ENSEMBLE_SPECIALIST_WEIGHT: float = 0.1
     ENSEMBLE_DNN_WEIGHT: float = 0.1

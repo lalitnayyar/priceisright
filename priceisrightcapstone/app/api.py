@@ -149,7 +149,7 @@ async def test_api_connection(service: str, request: Request):
                         "anthropic-version": "2023-06-01",
                         "content-type": "application/json"
                     },
-                    json={"model": "claude-3-5-haiku-latest", "max_tokens": 1,
+                    json={"model": "claude-haiku-4-5-20251001", "max_tokens": 1,
                           "messages": [{"role": "user", "content": "hi"}]}
                 )
             if r.status_code in (200, 400):
@@ -166,15 +166,24 @@ async def test_api_connection(service: str, request: Request):
             return {"ok": False, "message": "Pushover User Key or App Token is empty"}
         try:
             async with httpx.AsyncClient(timeout=10) as client:
+                # Send a real test notification to the user's device
                 r = await client.post(
-                    "https://api.pushover.net/1/users/validate.json",
-                    data={"token": token, "user": user}
+                    "https://api.pushover.net/1/messages.json",
+                    data={
+                        "token": token,
+                        "user": user,
+                        "title": "🔔 Price Is Right — Test Notification",
+                        "message": "✅ Your Pushover integration is working! The AI Deal Hunter will send you alerts when great deals are found.",
+                        "sound": "cashregister",
+                        "priority": 0
+                    }
                 )
             body = r.json()
             if body.get("status") == 1:
-                return {"ok": True, "message": "Connected — Pushover credentials are valid"}
+                return {"ok": True, "message": "✅ Test message sent! Check your Pushover device."}
             else:
-                return {"ok": False, "message": body.get("errors", ["Invalid credentials"])[0]}
+                errors = body.get("errors", ["Unknown error"])
+                return {"ok": False, "message": f"Pushover error: {errors[0]}"}
         except Exception as e:
             return {"ok": False, "message": str(e)}
 
