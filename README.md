@@ -4,7 +4,7 @@
 
 > **Author:** Lalit Nayyar | lalitnayyar@gmail.com | +971508320336 | +919595353336
 > **Repository:** https://github.com/lalitnayyar/priceisright.git
-> **Current Version:** v2.1.0
+> **Current Version:** v2.3.0
 
 *Disclaimer: This document is authored by Lalit Nayyar. Contact: lalitnayyar@gmail.com, +971508320336, +919595353336.*
 
@@ -50,7 +50,7 @@ The core of the application is a pipeline orchestrated by 7 distinct AI agents w
 | 3 | **Specialist Agent** | Llama-3.2-3B (Modal GPU) | Calls a fine-tuned model hosted on Modal GPU, trained specifically on product price prediction |
 | 4 | **Neural Network Agent** | PyTorch DNN | Runs product features through a local 5-layer residual Deep Neural Network for offline price estimation |
 | 5 | **Ensemble Agent** | Heuristic Combiner | Aggregates estimates from Frontier, Specialist, and DNN agents using configurable weights |
-| 6 | **Messaging Agent** | Claude 3.5 Sonnet | Crafts compelling push notification messages and sends via Pushover API |
+| 6 | **Messaging Agent** | `claude-3-5-sonnet-latest` | Crafts compelling push notification messages using Claude, then sends via Pushover HTTP API with `priority=1` for deals ≥ 50% off |
 | 7 | **Planning Agent** | GPT-4o Orchestrator | Coordinates the entire pipeline, handles parallel execution, logs every step, and saves results |
 
 ---
@@ -611,6 +611,12 @@ Additional selectors were added for: read-only outputs, dropdowns, number inputs
 
 | Version | Commit | Date | Change |
 |---------|--------|------|--------|
+| v2.3.0 | `97f7643` | 2026-07-02 | **fix:** Replace all retired Claude model IDs with current `*-latest` aliases; update Messaging Model dropdown |
+| v2.2.1 | `c625fb7` | 2026-07-02 | **feat:** Add `test_pushover_deals.py` — direct Pushover connectivity test script |
+| v2.2.0 | `b2b0958` | 2026-07-02 | **fix:** Remove duplicate educational disclaimer footer from `dashboard.py` |
+| v2.1.2 | `92e900e` | 2026-07-02 | **feat:** Add educational disclaimer footer with contact details to all pages |
+| v2.1.1 | `30b96af` | 2026-07-02 | **fix:** Test API buttons now read correct field names; deal cards unwrap nested JSON; `/results` handles both list and dict formats |
+| v2.1.0 | `59cfa94` | 2026-07-01 | **feat:** Add live screenshots to README; **fix:** Add `FileHandler` to `main.py` for persistent log file; fix `/logs` endpoint path |
 | v2.0.1 | `03b81bf` | 2026-07-01 | **fix:** Resolve `httpx`/`openai` proxy crash on startup; **feat:** Add `save-logs` command to `manage.sh` |
 | v2.0.0 | `e40b2ab` | 2026-07-01 | **fix:** Fully dynamic dashboard — Agent Status, Deals, Logs all driven by live JS polling; Settings CORS fixed; Scan button triggers real backend pipeline |
 | v1.9.0 | `fe54ea4` | 2026-07-01 | **feat:** Mount Gradio onto FastAPI via `gr.mount_gradio_app` — unified port 7860 for UI and API |
@@ -621,6 +627,136 @@ Additional selectors were added for: read-only outputs, dropdowns, number inputs
 | v1.2.0 | `bf518a8` | 2026-07-01 | **fix:** Resolve torch/transformers/sentence-transformers version conflict; add `.dockerignore`; add healthchecks |
 | v1.1.0 | `4338174` | 2026-07-01 | **docs:** Add detailed README with architecture diagrams and screenshots |
 | v1.0.0 | Initial | 2026-07-01 | **feat:** Initial release — 7-agent pipeline, Gradio UI, FastAPI, Docker Compose, manage scripts |
+
+---
+
+## 🔧 Applying Fixes to a Currently Deployed App
+
+If you already have the application running via Docker and want to apply the latest fixes **without a full wipe and redeploy**, use the following procedures depending on what changed.
+
+---
+
+### Fix A — Claude Model 404 Errors (`model: claude-3-haiku-20240307` not found)
+
+**Symptom:** The Messaging Agent logs show:
+```
+HTTP 404: {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-haiku-20240307"}}
+```
+And the Test Anthropic button in Settings returns a 404 error.
+
+**Root Cause:** Anthropic retired several dated model IDs. The app was referencing `claude-3-haiku-20240307`, `claude-3-opus-20240229`, and `claude-3-5-sonnet-20241022` — all now retired.
+
+**Fix — Option 1: Pull latest code and patch (no rebuild needed):**
+```bash
+cd priceisright/priceisrightcapstone
+git pull origin main
+./manage.sh patch
+```
+
+**Fix — Option 2: Override via Settings UI (no code change needed):**
+1. Open http://localhost:7860 → click the **Settings** tab
+2. In the **Agent Configuration** section, find **Messaging Model**
+3. Change the dropdown to `claude-3-5-sonnet-latest` (or any `*-latest` alias)
+4. Click **💾 Save & Apply**
+
+The `*-latest` aliases always point to Anthropic's current stable release and will not break when Anthropic retires specific dated versions.
+
+**Models updated in v2.3.0:**
+
+| Retired ID | Replacement | Used In |
+|---|---|---|
+| `claude-3-haiku-20240307` | `claude-3-5-haiku-latest` | `api.py` — Test Anthropic button |
+| `claude-3-opus-20240229` | `claude-opus-4-5` | Settings dropdown option |
+| `claude-3-5-sonnet-20241022` | `claude-3-5-sonnet-latest` | Default `MESSAGING_MODEL` everywhere |
+
+---
+
+### Fix B — Pushover Notifications Not Firing
+
+**Symptom:** Scans complete but no Pushover notifications arrive, even when deals exceed the threshold.
+
+**Root Cause:** The `data/ui_settings.json` file may contain placeholder/dummy Pushover credentials from initial setup.
+
+**Fix — Update via Settings UI:**
+1. Open http://localhost:7860 → click the **Settings** tab
+2. In the **API Keys** section, enter your real **Pushover User Key** and **Pushover App Token**
+3. Click **Test Pushover** to verify connectivity (should return `✅ Connected — Pushover credentials are valid`)
+4. Click **💾 Save & Apply**
+
+**Fix — Update via direct file edit (if UI is unavailable):**
+```bash
+# Edit the settings file directly inside the running container
+docker exec -it priceisrightcapstone-app-1 bash
+cat data/ui_settings.json  # Check current values
+# Edit with: nano data/ui_settings.json  or  python3 -c "..."
+exit
+```
+
+**Verify Pushover keys work directly:**
+```bash
+# From inside priceisrightcapstone/ directory
+python3 test_pushover_deals.py
+```
+This script sends 2 test deal notifications directly via the Pushover HTTP API, bypassing the agent pipeline entirely.
+
+**Tip:** Lower the `DEAL_THRESHOLD` in Settings from 50% to 30% to ensure more deals trigger notifications during testing.
+
+---
+
+### Fix C — Deal Cards Showing "Unknown Product" / $0.00
+
+**Symptom:** The Deal Opportunities panel shows cards but all display `Unknown Product`, `Current: $0.00`, `Predicted: $0.00`.
+
+**Root Cause:** The dashboard JavaScript was reading flat field names (`d.product_name`, `d.current_price`) but the `/results` API returns a nested structure: `{deal: {title, price, url}, ensemble_result: {estimated_price, discount_pct}}`.
+
+**Fix:** Pull latest code and patch:
+```bash
+git pull origin main
+./manage.sh patch
+```
+
+---
+
+### Fix D — Test API Buttons Show "API key is empty" Despite Filled Fields
+
+**Symptom:** The Test OpenAI / Test Anthropic / Test Pushover buttons show "API key is empty" even when the input fields are visibly populated.
+
+**Root Cause:** The `testApi()` JavaScript function was sending `{key: value}` to the backend, but the `/test-api/{service}` endpoint reads specific field names like `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.
+
+**Fix:** Pull latest code and patch:
+```bash
+git pull origin main
+./manage.sh patch
+```
+
+---
+
+### Fix E — Live Agent Logs Show "No log file found"
+
+**Symptom:** The Live Agent Logs terminal in the dashboard always shows `No log file found. Run a scan to generate activity logs.` even after running scans.
+
+**Root Cause:** The app was logging only to stdout (no file). The `/logs` endpoint had no file to read from.
+
+**Fix:** Pull latest code and patch:
+```bash
+git pull origin main
+./manage.sh patch
+```
+After patching, `main.py` writes logs to `/tmp/priceisright_agent.log` via a `FileHandler`. The `/logs` endpoint reads from this file and returns the last 100 lines.
+
+---
+
+### Quick Reference — Which Fix Requires a Rebuild?
+
+| Fix | Requires Rebuild? | Command |
+|-----|---|---------|
+| Claude model IDs | No — `patch` is sufficient | `./manage.sh patch` |
+| Pushover keys | No — update via Settings UI | Settings → Save & Apply |
+| Deal card field names | No — `patch` is sufficient | `./manage.sh patch` |
+| Test API button payload | No — `patch` is sufficient | `./manage.sh patch` |
+| Log file not found | No — `patch` is sufficient | `./manage.sh patch` |
+| Python dependency changes | **Yes — full rebuild** | `./manage.sh update` |
+| Docker Compose changes | **Yes — full rebuild** | `./manage.sh deploy` |
 
 ---
 
