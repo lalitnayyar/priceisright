@@ -4,7 +4,7 @@
 
 > **Author:** Lalit Nayyar | lalitnayyar@gmail.com | +971508320336 | +919595353336
 > **Repository:** https://github.com/lalitnayyar/priceisright.git
-> **Current Version:** v2.3.0
+> **Current Version:** v2.4.0
 
 *Disclaimer: This document is authored by Lalit Nayyar. Contact: lalitnayyar@gmail.com, +971508320336, +919595353336.*
 
@@ -611,6 +611,7 @@ Additional selectors were added for: read-only outputs, dropdowns, number inputs
 
 | Version | Commit | Date | Change |
 |---------|--------|------|--------|
+| v2.4.0 | `8605fc0` | 2026-07-02 | **fix:** Use account-specific Claude 4.x model IDs (not `*-latest` aliases); Test Pushover button now sends real device notification |
 | v2.3.0 | `97f7643` | 2026-07-02 | **fix:** Replace all retired Claude model IDs with current `*-latest` aliases; update Messaging Model dropdown |
 | v2.2.1 | `c625fb7` | 2026-07-02 | **feat:** Add `test_pushover_deals.py` — direct Pushover connectivity test script |
 | v2.2.0 | `b2b0958` | 2026-07-02 | **fix:** Remove duplicate educational disclaimer footer from `dashboard.py` |
@@ -661,13 +662,34 @@ git pull origin main
 
 The `*-latest` aliases always point to Anthropic's current stable release and will not break when Anthropic retires specific dated versions.
 
-**Models updated in v2.3.0:**
+**Models updated in v2.3.0 → v2.4.0:**
 
-| Retired ID | Replacement | Used In |
+> **Important:** Anthropic model availability depends on your specific account/plan. The `*-latest` aliases may not exist on all accounts. Always verify available models using the Anthropic Models API before deploying.
+
+```bash
+# Check which models your Anthropic key can access:
+curl https://api.anthropic.com/v1/models \
+  -H "x-api-key: YOUR_ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" | python3 -c "import json,sys; [print(m['id']) for m in json.load(sys.stdin)['data']]"
+```
+
+| Retired / Wrong ID | Replacement (v2.4.0) | Used In |
 |---|---|---|
-| `claude-3-haiku-20240307` | `claude-3-5-haiku-latest` | `api.py` — Test Anthropic button |
-| `claude-3-opus-20240229` | `claude-opus-4-5` | Settings dropdown option |
-| `claude-3-5-sonnet-20241022` | `claude-3-5-sonnet-latest` | Default `MESSAGING_MODEL` everywhere |
+| `claude-3-haiku-20240307` | `claude-haiku-4-5-20251001` | `api.py` — Test Anthropic button |
+| `claude-3-opus-20240229` | `claude-opus-4-5-20251101` | Settings dropdown option |
+| `claude-3-5-sonnet-20241022` | `claude-sonnet-4-5-20250929` | Default `MESSAGING_MODEL` everywhere |
+| `claude-3-5-sonnet-latest` | `claude-sonnet-4-5-20250929` | All defaults (alias not available on all accounts) |
+| `claude-3-5-haiku-latest` | `claude-haiku-4-5-20251001` | Test endpoint (alias not available on all accounts) |
+
+**Available models on the reference account (as of 2026-07-02):**
+
+| Model ID | Display Name | Recommended Use |
+|---|---|---|
+| `claude-haiku-4-5-20251001` | Claude Haiku 4.5 | Fast/cheap — API test calls |
+| `claude-sonnet-4-5-20250929` | Claude Sonnet 4.5 | **Default Messaging Agent** |
+| `claude-sonnet-4-6` | Claude Sonnet 4.6 | Latest Sonnet |
+| `claude-opus-4-5-20251101` | Claude Opus 4.5 | Highest quality notifications |
+| `claude-opus-4-1-20250805` | Claude Opus 4.1 | High quality |
 
 ---
 
@@ -680,7 +702,7 @@ The `*-latest` aliases always point to Anthropic's current stable release and wi
 **Fix — Update via Settings UI:**
 1. Open http://localhost:7860 → click the **Settings** tab
 2. In the **API Keys** section, enter your real **Pushover User Key** and **Pushover App Token**
-3. Click **Test Pushover** to verify connectivity (should return `✅ Connected — Pushover credentials are valid`)
+3. Click **Test Pushover** to verify connectivity — this now **sends a real push notification** to your device with title `🔔 Price Is Right — Test Notification` and the `cashregister` sound. You should receive it immediately.
 4. Click **💾 Save & Apply**
 
 **Fix — Update via direct file edit (if UI is unavailable):**
@@ -743,6 +765,121 @@ git pull origin main
 ./manage.sh patch
 ```
 After patching, `main.py` writes logs to `/tmp/priceisright_agent.log` via a `FileHandler`. The `/logs` endpoint reads from this file and returns the last 100 lines.
+
+---
+
+### Fix F — Account-Specific Claude Model IDs (HTTP 404 on Anthropic calls)
+
+**Symptom:** Even after updating to `*-latest` aliases, the Messaging Agent still returns:
+```
+HTTP 404: {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-haiku-latest"}}
+```
+
+**Root Cause:** The `*-latest` aliases are not universally available. Some Anthropic accounts (particularly API-only or enterprise accounts) only have access to specific versioned model IDs in the Claude 4.x family, not the `claude-3-x` family at all.
+
+**Fix — Step 1: Discover your available models:**
+```bash
+curl https://api.anthropic.com/v1/models \
+  -H "x-api-key: YOUR_ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" | python3 -c \
+  "import json,sys; [print(m['id'], '-', m['display_name']) for m in json.load(sys.stdin)['data']]"
+```
+
+**Fix — Step 2: Update via Settings UI (no rebuild needed):**
+1. Open http://localhost:7860 → **Settings** tab
+2. In **Agent Configuration**, set **Messaging Model** to a model ID from your available list
+3. Click **💾 Save & Apply**
+
+**Fix — Step 3: Pull latest code (already uses correct IDs for reference account):**
+```bash
+git pull origin main
+./manage.sh patch
+```
+
+---
+
+### 🔄 How to Update or Patch a Currently Deployed App
+
+This is the **master reference** for applying any fix to a live Docker deployment. Bookmark this section.
+
+#### Option 1 — Patch (fastest, no rebuild, for code-only changes)
+
+Use when: Python files changed (`api.py`, `dashboard.py`, agents, config), static HTML/JS changed, or settings updated.
+
+```bash
+cd priceisright/priceisrightcapstone
+git pull origin main          # Pull latest fixes from GitHub
+./manage.sh patch              # Restarts app + api containers only (no image rebuild)
+```
+
+What `patch` does:
+1. `git pull` — fetches latest code
+2. `docker compose restart app api` — restarts only the two app containers
+3. New Python code is picked up immediately (no layer rebuild needed)
+4. Takes ~10 seconds
+
+#### Option 2 — Update (medium, rebuilds images, for dependency changes)
+
+Use when: `requirements.txt` changed, `Dockerfile` changed, or new Python packages added.
+
+```bash
+cd priceisright/priceisrightcapstone
+git pull origin main
+./manage.sh update             # Rebuilds images and restarts all containers
+```
+
+What `update` does:
+1. `git pull` — fetches latest code
+2. `docker compose build --no-cache app api` — rebuilds app + api images
+3. `docker compose up -d` — restarts all services
+4. Takes ~5–10 minutes (downloads packages if changed)
+
+#### Option 3 — Deploy (full wipe + rebuild, for major changes)
+
+Use when: `docker-compose.yml` changed, new services added, or you want a completely clean slate.
+
+```bash
+cd priceisright/priceisrightcapstone
+docker compose down --volumes --remove-orphans
+git pull origin main
+./manage.sh deploy             # Full rebuild from scratch
+```
+
+#### Option 4 — Settings-only update (no restart needed)
+
+Use when: Only API keys, model names, thresholds, or feed URLs changed.
+
+1. Open http://localhost:7860 → **Settings** tab
+2. Make your changes
+3. Click **💾 Save & Apply**
+4. Changes take effect on the **next scan** (no restart needed)
+
+#### Option 5 — Emergency: edit file directly inside running container
+
+Use when: App is running in Docker and you need a one-line hotfix without git.
+
+```bash
+# Get a shell inside the running app container
+docker exec -it priceisrightcapstone-app-1 bash
+
+# Edit any file (e.g., fix a model ID)
+nano app/api.py
+
+# Exit and restart just the app container
+exit
+docker compose restart app
+```
+
+#### Decision Table — Which Option to Use?
+
+| What Changed | Option | Time |
+|---|---|---|
+| API keys / model names / thresholds | **4 — Settings UI** | Instant |
+| Python code (`.py` files) | **1 — Patch** | ~10s |
+| Static HTML/JS (`.html` files) | **1 — Patch** | ~10s |
+| Python packages (`requirements.txt`) | **2 — Update** | ~5–10 min |
+| Docker config (`docker-compose.yml`) | **3 — Deploy** | ~15 min |
+| Data corruption / fresh start needed | **3 — Deploy** | ~15 min |
 
 ---
 
