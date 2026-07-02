@@ -149,7 +149,7 @@ async def test_api_connection(service: str, request: Request):
                         "anthropic-version": "2023-06-01",
                         "content-type": "application/json"
                     },
-                    json={"model": "claude-3-haiku-20240307", "max_tokens": 1,
+                    json={"model": "claude-3-5-haiku-latest", "max_tokens": 1,
                           "messages": [{"role": "user", "content": "hi"}]}
                 )
             if r.status_code in (200, 400):
